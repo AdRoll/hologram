@@ -1,0 +1,119 @@
+// Copyright 2014 AdRoll, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+package protocol;
+
+message Message {
+	optional string error = 1;
+
+	enum Source {
+		OTHER = 0;
+		HOLOGRAM_SERVER = 1;
+		HOLOGRAM_CLIENT = 2;
+		HOLOGRAM_CLI = 3;
+	}
+
+	/* This is useful for statistics and debugging */
+	optional Source source = 2 [default = OTHER];
+
+	oneof body {
+		Ping ping = 5;
+		ServerRequest serverRequest = 6;
+		ServerResponse serverResponse = 7;
+		AgentRequest agentRequest = 8;
+		AgentResponse agentResponse = 9;
+	}
+}
+
+message Ping {
+	enum RequestResponse {
+		REQUEST = 1;
+		RESPONSE = 2;
+	}
+	optional RequestResponse type = 1 [default = REQUEST];
+}
+
+message ServerRequest {
+	oneof request {
+		AssumeRole assumeRole = 4;
+		SSHChallengeResponse challengeResponse = 5;
+		MFATokenResponse tokenResponse = 6;
+		GetUserCredentials getUserCredentials = 7;
+	}
+}
+
+message AssumeRole {
+  optional string user = 1;
+  optional string role = 2;
+}
+
+message GetUserCredentials {}
+
+message SSHChallengeResponse {
+  required bytes signature = 1;
+  required string format = 2;
+}
+
+message MFATokenResponse {
+  optional string tokenValue = 1;
+}
+
+message ServerResponse {
+	oneof response {
+		SSHChallenge challenge = 4;
+		SSHVerificationFailure verificationFailure = 5;
+		STSCredentials credentials = 6;
+		MFATokenRequest tokenRequest = 7;
+	}
+}
+
+message SSHChallenge {
+  required bytes challenge = 1;
+}
+
+message SSHVerificationFailure {}
+
+message STSCredentials {
+  required string accessKeyId = 1;
+  required string secretAccessKey = 2;
+  required string accessToken = 3;
+  required int64 expiration = 4;
+}
+
+message MFATokenRequest {
+}
+
+message AgentRequest {
+	optional string sshAgentSock = 2;
+	oneof request {
+		AssumeRole assumeRole = 3;
+		GetUserCredentials getUserCredentials = 4;
+	}
+
+  // sshKeyFile should be sent along if the CLI cannot determine
+  // how to communicate with the user's SSH agent.
+  optional bytes sshKeyFile = 5;
+}
+
+message AgentResponse {
+	oneof response {
+		Success success = 2;
+		Failure failure = 3;
+	}
+}
+
+message Success {}
+
+message Failure {
+	optional string errorMessage = 1;
+}
