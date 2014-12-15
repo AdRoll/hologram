@@ -1,7 +1,8 @@
 # Hologram
-Licensed under the Apache License, Version 2.0 (the "License"); see LICENSE for more details.
 
 ## Overview
+Storing your AWS keys in source code is a Real Bad Idea, but few good options exist to mitigate this risk that aren't terribly inconvenient. Hologram aims to change this.
+
 EC2 has a feature called "IAM Roles" where a special endpoint in the instance metadata service (http://169.254.169.254/...) exposes temporary AWS API access credentials that have permissions defined by the instance's Role, configured at launch time. In this way, applications can be designed that do not require secret keys checked into their repositories at all, and the chance of malicious key usage is reduced. This service only exists in EC2, but Hologram brings it to non-EC2 hosts, so that developers can run the same software with the same credentials source as in production.
 
 Hologram exposes an imitation of the EC2 instance metadata service on developer workstations that supports the temporary credentials workflow. It is accessible via the same HTTP endpoint to calling SDKs, so your code can use the same process in both development and production. The keys that Hologram provisions are temporary, so EC2 access can be centrally controlled without direct administrative access to developer workstations.
@@ -69,4 +70,7 @@ Here are some issues we've run into running Hologram that you might want to be a
 
 * **Sometimes OS X workstations don't like SSH agent.** Some developers have needed to do `ssh-add -K` to add their key to the keychain; some have needed to do this every time they boot; and some just don't require it at all. Your mileage may vary.
 * **If you use an ELB to load-balance between Hologram servers, do not have it terminate the TLS connection.** It's pointless to have your ELB use the SSL certificate compiled into Hologram, when the servers themselves know how to handle it. Let them do their job, and have your ELB just use the TCP protocol.
-  
+
+## License
+
+Licensed under the Apache License, Version 2.0 (the "License"); see LICENSE for more details.
