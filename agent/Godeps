@@ -1,0 +1,4 @@
+github.com/smartystreets/goconvey e4cef38b8924b3cff6d84a524e8fe938ad0bcbf2
+code.google.com/p/goprotobuf/proto release
+code.google.com/p/goprotobuf/protoc-gen-go release
+golang.org/x/crypto/ssh release
