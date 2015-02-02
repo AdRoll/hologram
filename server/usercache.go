@@ -27,7 +27,7 @@ User represents information about a user stored in the cache.
 */
 type User struct {
 	Username string
-	SSHKey   ssh.PublicKey
+	SSHKeys  []ssh.PublicKey
 }
 
 /*
@@ -82,15 +82,20 @@ func (luc *ldapUserCache) Update() error {
 
 	for _, entry := range searchResult.Entries {
 		username := entry.GetAttributeValue("cn")
-		sshKeyBytes, _ := base64.StdEncoding.DecodeString(entry.GetAttributeValue("sshPublicKey"))
-		userSSHKey, err := ssh.ParsePublicKey(sshKeyBytes)
-		if err != nil {
-			log.Error("SSH key parsing for %s failed! This key will not be added into LDAP.", username)
-			continue
+		userKeys := []ssh.PublicKey{}
+		for _, eachKey := range entry.GetAttributeValues("sshPublicKey") {
+			sshKeyBytes, _ := base64.StdEncoding.DecodeString(eachKey)
+			userSSHKey, err := ssh.ParsePublicKey(sshKeyBytes)
+			if err != nil {
+				log.Error("SSH key parsing for %s failed! This key will not be added into LDAP.", username)
+				continue
+			}
+
+			userKeys = append(userKeys, userSSHKey)
 		}
 
 		luc.users[username] = &User{
-			SSHKey:   userSSHKey,
+			SSHKeys:  userKeys,
 			Username: username,
 		}
 
@@ -109,9 +114,11 @@ func (luc *ldapUserCache) Users() map[string]*User {
 func (luc *ldapUserCache) _verify(username string, challenge []byte, sshSig *ssh.Signature) (
 	*User, error) {
 	for _, user := range luc.users {
-		verifyErr := user.SSHKey.Verify(challenge, sshSig)
-		if verifyErr == nil {
-			return user, nil
+		for _, key := range user.SSHKeys {
+			verifyErr := key.Verify(challenge, sshSig)
+			if verifyErr == nil {
+				return user, nil
+			}
 		}
 	}
 
