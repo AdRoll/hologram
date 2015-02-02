@@ -17,7 +17,7 @@ package remote
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"github.com/SemanticSugar/hologram/protocol"
+	"github.com/AdRoll/hologram/protocol"
 )
 
 /*

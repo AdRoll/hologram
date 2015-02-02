@@ -15,7 +15,7 @@ package server_test
 
 import (
 	"encoding/base64"
-	"github.com/SemanticSugar/hologram/server"
+	"github.com/AdRoll/hologram/server"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	. "github.com/smartystreets/goconvey/convey"

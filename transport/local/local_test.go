@@ -14,8 +14,8 @@
 package local_test
 
 import (
-	"github.com/SemanticSugar/hologram/protocol"
-	"github.com/SemanticSugar/hologram/transport/local"
+	"github.com/AdRoll/hologram/protocol"
+	"github.com/AdRoll/hologram/transport/local"
 	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 )

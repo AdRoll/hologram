@@ -16,8 +16,8 @@ package agent
 import (
 	"errors"
 	"fmt"
-	"github.com/SemanticSugar/hologram/protocol"
-	"github.com/SemanticSugar/hologram/transport/remote"
+	"github.com/AdRoll/hologram/protocol"
+	"github.com/AdRoll/hologram/transport/remote"
 	"github.com/goamz/goamz/sts"
 	"time"
 )

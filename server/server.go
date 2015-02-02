@@ -17,8 +17,8 @@ package server
 
 import (
 	"errors"
-	"github.com/SemanticSugar/hologram/log"
-	"github.com/SemanticSugar/hologram/protocol"
+	"github.com/AdRoll/hologram/log"
+	"github.com/AdRoll/hologram/protocol"
 	"github.com/goamz/goamz/sts"
 	"github.com/peterbourgon/g2s"
 	"golang.org/x/crypto/ssh"

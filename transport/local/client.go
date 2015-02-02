@@ -15,7 +15,7 @@
 package local
 
 import (
-	"github.com/SemanticSugar/hologram/protocol"
+	"github.com/AdRoll/hologram/protocol"
 	"net"
 )
 

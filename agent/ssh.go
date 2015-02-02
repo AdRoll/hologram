@@ -16,7 +16,7 @@ package agent
 import (
 	"crypto/rand"
 	"errors"
-	"github.com/SemanticSugar/hologram/log"
+	"github.com/AdRoll/hologram/log"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"net"

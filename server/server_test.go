@@ -16,8 +16,8 @@
 package server_test
 
 import (
-	"github.com/SemanticSugar/hologram/protocol"
-	"github.com/SemanticSugar/hologram/server"
+	"github.com/AdRoll/hologram/protocol"
+	"github.com/AdRoll/hologram/server"
 	"github.com/goamz/goamz/sts"
 	"github.com/peterbourgon/g2s"
 	. "github.com/smartystreets/goconvey/convey"

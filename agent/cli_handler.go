@@ -14,9 +14,9 @@
 package agent
 
 import (
-	"github.com/SemanticSugar/hologram/log"
-	"github.com/SemanticSugar/hologram/protocol"
-	"github.com/SemanticSugar/hologram/transport/local"
+	"github.com/AdRoll/hologram/log"
+	"github.com/AdRoll/hologram/protocol"
+	"github.com/AdRoll/hologram/transport/local"
 	"os"
 )
 

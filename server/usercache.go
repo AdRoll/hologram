@@ -15,7 +15,7 @@ package server
 
 import (
 	"encoding/base64"
-	"github.com/SemanticSugar/hologram/log"
+	"github.com/AdRoll/hologram/log"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	"golang.org/x/crypto/ssh"
