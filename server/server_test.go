@@ -19,10 +19,12 @@ import (
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/server"
 	"github.com/goamz/goamz/sts"
+	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/crypto/ssh"
 	"io"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -76,10 +78,57 @@ func (*dummyCredentials) AssumeRole(user *server.User, role string) (*sts.Creden
 	}, nil
 }
 
+type DummyLDAP struct {
+	username string
+	password string
+	sshKeys  []string
+	req      *ldap.ModifyRequest
+}
+
+func (l *DummyLDAP) Search(*ldap.SearchRequest) (*ldap.SearchResult, error) {
+	return &ldap.SearchResult{
+		Entries: []*ldap.Entry{
+			&ldap.Entry{DN: "something",
+				Attributes: []*ldap.EntryAttribute{
+					&ldap.EntryAttribute{
+						Name:   "cn",
+						Values: []string{l.username},
+					},
+					&ldap.EntryAttribute{
+						Name:   "userPassword",
+						Values: []string{l.password},
+					},
+					&ldap.EntryAttribute{
+						Name:   "sshPublicKey",
+						Values: l.sshKeys,
+					},
+				},
+			},
+		},
+	}, nil
+}
+
+func (l *DummyLDAP) Modify(mr *ldap.ModifyRequest) error {
+	if reflect.DeepEqual(mr, l.req) {
+		l.sshKeys = []string{"test"}
+	}
+	return nil
+}
+
 func TestServerStateMachine(t *testing.T) {
+	// This silly thing is needed for equality testing for the LDAP dummy.
+	neededModifyRequest := ldap.NewModifyRequest("something")
+	neededModifyRequest.Add("sshPublicKey", []string{"test"})
+
 	Convey("Given a state machine setup with a null logger", t, func() {
 		authenticator := &DummyAuthenticator{&server.User{Username: "words"}}
-		testServer := server.New(authenticator, &dummyCredentials{}, "default", g2s.Noop())
+		ldap := &DummyLDAP{
+			username: "ari.adair",
+			password: "098f6bcd4621d373cade4e832627b4f6",
+			sshKeys:  []string{},
+			req:      neededModifyRequest,
+		}
+		testServer := server.New(authenticator, &dummyCredentials{}, "default", g2s.Noop(), ldap)
 		r, w := io.Pipe()
 
 		testConnection := protocol.NewMessageConnection(ReadWriter(r, w))
@@ -178,6 +227,42 @@ func TestServerStateMachine(t *testing.T) {
 				So(credsMsg, ShouldNotBeNil)
 				So(credsMsg.GetServerResponse(), ShouldNotBeNil)
 				So(credsMsg.GetServerResponse().GetVerificationFailure(), ShouldNotBeNil)
+			})
+		})
+
+		Convey("When a request to add an SSH key comes in", func() {
+			user := "ari.adair"
+			password := "098f6bcd4621d373cade4e832627b4f6"
+			sshKey := "test"
+			testMessage := &protocol.Message{
+				ServerRequest: &protocol.ServerRequest{
+					AddSSHkey: &protocol.AddSSHKey{
+						Username:     &user,
+						Passwordhash: &password,
+						Sshkeybytes:  &sshKey,
+					},
+				},
+			}
+
+			testConnection.Write(testMessage)
+			Convey("If this request is valid", func() {
+				msg, err := testConnection.Read()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if msg.GetSuccess() == nil {
+					t.Fail()
+				}
+				Convey("It should add the SSH key to the user.", func() {
+					So(ldap.sshKeys[0], ShouldEqual, sshKey)
+					Convey("If the user tries to add the same SSH key", func() {
+						testConnection.Write(testMessage)
+						Convey("It should not insert the same key twice.", func() {
+							So(len(ldap.sshKeys), ShouldEqual, 1)
+						})
+					})
+				})
 			})
 		})
 	})

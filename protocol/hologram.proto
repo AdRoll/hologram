@@ -32,6 +32,8 @@ message Message {
 		ServerResponse serverResponse = 7;
 		AgentRequest agentRequest = 8;
 		AgentResponse agentResponse = 9;
+    Success success = 10;
+    Failure failure = 11;
 	}
 }
 
@@ -49,6 +51,7 @@ message ServerRequest {
 		SSHChallengeResponse challengeResponse = 5;
 		MFATokenResponse tokenResponse = 6;
 		GetUserCredentials getUserCredentials = 7;
+    AddSSHKey addSSHkey = 8;
 	}
 }
 
@@ -58,6 +61,12 @@ message AssumeRole {
 }
 
 message GetUserCredentials {}
+
+message AddSSHKey {
+  required string username = 1;
+  required string passwordhash = 2;
+  required string sshkeybytes = 3;
+}
 
 message SSHChallengeResponse {
   required bytes signature = 1;

@@ -85,6 +85,10 @@ func (sls *StubLDAPServer) Search(s *ldap.SearchRequest) (*ldap.SearchResult, er
 	}, nil
 }
 
+func (*StubLDAPServer) Modify(*ldap.ModifyRequest) error {
+	return nil
+}
+
 func randomBytes(length int) []byte {
 	buf := make([]byte, length)
 

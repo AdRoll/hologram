@@ -17,9 +17,11 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/goamz/goamz/sts"
+	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	"golang.org/x/crypto/ssh"
 	"math/rand"
@@ -38,6 +40,7 @@ type server struct {
 	credentials   CredentialService
 	stats         g2s.Statter
 	DefaultRole   string
+	ldapServer    LDAPImplementation
 }
 
 /*
@@ -139,6 +142,56 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 			m.Write(makeCredsResponse(creds))
 			return
 		}
+	} else if addSSHKeyMsg := r.GetAddSSHkey(); addSSHKeyMsg != nil {
+		sm.stats.Counter(1.0, "messages.addSSHKeyMsg", 1)
+
+		// Search for the user specified in this request.
+		sr := ldap.NewSearchRequest(
+			"dc=keeponprovoking,dc=com",
+			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+			fmt.Sprintf("(cn=%s)", addSSHKeyMsg.GetUsername()),
+			[]string{"sshPublicKey", "cn", "userPassword"},
+			nil)
+
+		user, err := sm.ldapServer.Search(sr)
+		if err != nil {
+			log.Error("Error trying to handle addSSHKeyMsg: %s", err.Error())
+			return
+		}
+
+		if len(user.Entries) == 0 {
+			log.Error("User %s not found!", addSSHKeyMsg.GetUsername())
+			return
+		}
+
+		// Check their password.
+		password := user.Entries[0].GetAttributeValue("userPassword")
+		if password != addSSHKeyMsg.GetPasswordhash() {
+			log.Error("Provided password for user %s does not match %s!", addSSHKeyMsg.GetUsername(), password)
+			return
+		}
+
+		// Check to see if this SSH key already exists.
+		for _, k := range user.Entries[0].GetAttributeValues("sshPublicKey") {
+			if k == addSSHKeyMsg.GetSshkeybytes() {
+				log.Warning("User %s already has this SSH key. Doing nothing.", addSSHKeyMsg.GetUsername())
+				successMsg := &protocol.Message{Success: &protocol.Success{}}
+				m.Write(successMsg)
+				return
+			}
+		}
+
+		mr := ldap.NewModifyRequest(user.Entries[0].DN)
+		mr.Add("sshPublicKey", []string{addSSHKeyMsg.GetSshkeybytes()})
+		err = sm.ldapServer.Modify(mr)
+		if err != nil {
+			log.Error("Could not modify LDAP user: %s", err.Error())
+			return
+		}
+
+		successMsg := &protocol.Message{Success: &protocol.Success{}}
+		m.Write(successMsg)
+		return
 	}
 }
 
@@ -225,11 +278,12 @@ func makeCredsResponse(creds *sts.Credentials) *protocol.Message {
 New returns a server that can be used as a handler for a
 MessageConnection loop.
 */
-func New(a Authenticator, c CredentialService, r string, s g2s.Statter) *server {
+func New(a Authenticator, c CredentialService, r string, s g2s.Statter, l LDAPImplementation) *server {
 	return &server{
 		credentials:   c,
 		authenticator: a,
 		stats:         s,
 		DefaultRole:   r,
+		ldapServer:    l,
 	}
 }

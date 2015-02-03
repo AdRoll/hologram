@@ -46,6 +46,7 @@ This interface exists for testing purposes.
 */
 type LDAPImplementation interface {
 	Search(*ldap.SearchRequest) (*ldap.SearchResult, error)
+	Modify(*ldap.ModifyRequest) error
 }
 
 /*

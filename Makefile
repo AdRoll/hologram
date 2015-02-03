@@ -30,7 +30,7 @@ setup: .setup-complete
 
 package: bin/darwin/Hologram-$(GIT_TAG).pkg bin/linux/hologram-$(GIT_TAG).deb bin/linux/hologram-server-$(GIT_TAG).deb
 
-build: bin/darwin/hologram-server bin/linux/hologram-server bin/darwin/hologram-agent bin/linux/hologram-agent bin/darwin/hologram-cli bin/linux/hologram-cli
+build: bin/darwin/hologram-server bin/linux/hologram-server bin/darwin/hologram-agent bin/linux/hologram-agent bin/darwin/hologram-cli bin/linux/hologram-cli bin/darwin/hologram-authorize bin/linux/hologram-authorize
 
 protocol/hologram.pb.go: protocol/hologram.proto
 	protoc --go_out=. protocol/hologram.proto
@@ -52,6 +52,10 @@ bin/%/hologram-server: protocol/hologram.pb.go server/.deps server/*.go server/*
 	@echo "Building server version $(GIT_TAG)$(GIT_DIRTY)"
 	@cd server/bin; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-server"
 
+bin/%/hologram-authorize: protocol/hologram.pb.go tools/install/*.go log/*.go log/.deps transport/remote/*.go transport/remote/bindata.go
+	@echo "Building SSH key updater version $(GIT_TAG)$(GIT_DIRTY)"
+	@cd tools/install; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-authorize"
+
 bin/%/hologram-cli: protocol/hologram.pb.go cli/*/*.go log/*.go log/.deps transport/local/*.go cli/.deps
 	@echo "Building CLI version $(GIT_TAG)$(GIT_DIRTY)"
 	@cd cli/bin; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-cli"
@@ -60,12 +64,13 @@ bin/ping: tools/ping/main.go log/*.go log/.deps
 	@cd tools/ping; go build
 	@mv tools/ping/ping bin/ping
 
-bin/darwin/Hologram-%.pkg: bin/darwin/hologram-agent bin/darwin/hologram-cli agent/support/darwin/com.adroll.hologram*.plist agent/support/darwin/postinstall.sh
+bin/darwin/Hologram-%.pkg: bin/darwin/hologram-agent bin/darwin/hologram-cli bin/darwin/hologram-authorize agent/support/darwin/com.adroll.hologram*.plist agent/support/darwin/postinstall.sh
 	@echo "Creating temporary directory for pkgbuild..."
 	@mkdir -p pkg/darwin/{root,scripts}
 	@mkdir -p ./pkg/darwin/root/{usr/bin,Library/{LaunchDaemons,LaunchAgents},etc/hologram}
 	@cp ./bin/darwin/hologram-agent ./pkg/darwin/root/usr/bin/hologram-agent
 	@cp ./bin/darwin/hologram-cli ./pkg/darwin/root/usr/bin/hologram
+	@cp ./bin/darwin/hologram-authorize ./pkg/darwin/root/usr/bin/hologram-authorize
 	@cp ./config/agent.json ./pkg/darwin/root/etc/hologram/agent.json
 	@cp ./agent/support/darwin/hologram-boot.sh ./pkg/darwin/root/usr/bin/hologram-boot
 	@cp ./agent/support/darwin/com.adroll.hologram-ip.plist ./pkg/darwin/root/Library/LaunchDaemons
@@ -104,13 +109,14 @@ bin/linux/hologram-server-%.deb: bin/linux/hologram-server server/after-install.
 		-a amd64                                                             \
 		./
 
-bin/linux/hologram-%.deb: bin/linux/hologram-cli bin/linux/hologram-agent
+bin/linux/hologram-%.deb: bin/linux/hologram-cli bin/linux/hologram-agent bin/linux/hologram-authorize
 	@echo "Creating temporary directory for fpm..."
 	@mkdir -p ./pkg/linux/hologram/{root,scripts}
 	@mkdir -p ./pkg/linux/hologram/root/{usr/local/bin,etc/{hologram,init.d}}
 	@cp ./config/agent.json ./pkg/linux/hologram/root/etc/hologram/agent.json
 	@cp ./bin/linux/hologram-cli ./pkg/linux/hologram/root/usr/local/bin/hologram
 	@cp ./bin/linux/hologram-agent ./pkg/linux/hologram/root/usr/local/bin/hologram-agent
+	@cp ./bin/linux/hologram-authorize ./pkg/linux/hologram/root/usr/local/bin/hologram-authorize
 	@cp ./agent/support/debian/after-install.sh ./pkg/linux/hologram/scripts/
 	@cp ./agent/support/debian/before-remove.sh ./pkg/linux/hologram/scripts/
 	@cp ./agent/support/debian/init.sh ./pkg/linux/hologram/root/etc/init.d/hologram-agent
@@ -132,10 +138,10 @@ test: protocol/hologram.pb.go server/.deps agent/.deps transport/remote/bindata.
 clean:
 	rm -rf ./bin ./build
 	sudo rm -rf ./pkg
- 	
+
 version:
 	@echo "$(GIT_TAG)"
 
-.PHONY: setup all build package clean test  version
+.PHONY: setup all build package clean test version
 
 
