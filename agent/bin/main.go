@@ -17,8 +17,8 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/SemanticSugar/hologram/agent"
-	"github.com/SemanticSugar/hologram/log"
+	"github.com/AdRoll/hologram/agent"
+	"github.com/AdRoll/hologram/log"
 	"io/ioutil"
 	"net"
 	"os"

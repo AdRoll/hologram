@@ -4,7 +4,7 @@ pkg/
 spec.pdf
 *.pb.go
 .deps
-bin
+/bin
 deploy/healthcheck
 transport/remote/bindata.go
 agent/bindata.go
