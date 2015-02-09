@@ -99,10 +99,10 @@ func (mds *metadataService) enumerateRoles(w http.ResponseWriter, r *http.Reques
 }
 
 /*
-Dyno and Boodah both require configuration values from the metadata service.
+Return fake data for programs that depend on data from the metadata service.
 
-Previous to Hologram, they needed a manually-setup Nginx config that
-was very error-prone to work with.
+These fields are constructed to be obviously wrong and would never be found in the
+production environment.
 */
 func (mds *metadataService) getInstanceID(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "i-deadbeef")

@@ -77,17 +77,17 @@ func TestMetadataService(t *testing.T) {
 			So(creds.Expiration, ShouldEqual, "2014-10-22T12:21:17Z")
 		})
 
-		Convey("It should return a fake instance ID for Dyno and Boodah", func() {
+		Convey("It should return a fake instance ID.", func() {
 			respBody := string(request(service.Port(), "/latest/meta-data/instance-id"))
 			So(respBody, ShouldEqual, "i-deadbeef")
 		})
 
-		Convey("It should return a fake availability zone for Dyno and Boodah.", func() {
+		Convey("It should return a fake availability zone..", func() {
 			respBody := string(request(service.Port(), "/latest/meta-data/placement/availability-zone"))
 			So(respBody, ShouldEqual, "us-west-2x")
 		})
 
-		Convey("It should return a fake public DNS name for Dyno and Boodah.", func() {
+		Convey("It should return a fake public DNS name.", func() {
 			respBody := string(request(service.Port(), "/latest/meta-data/public-hostname"))
 			So(respBody, ShouldEqual, "ec2-0-0-0-0.us-west-2.compute.amazonaws.com")
 		})
