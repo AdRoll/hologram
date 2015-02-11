@@ -50,7 +50,10 @@ func (sm *server) HandleConnection(m protocol.MessageReadWriteCloser) {
 	for {
 		recvMsg, err := m.Read()
 		if err != nil {
-			log.Error("Error reading data from stream: %s", err.Error())
+			// EOFs are normal, so we don't want to report them as errors.
+			if err.Error() != "EOF" {
+				log.Error("Error reading data from stream: %s", err.Error())
+			}
 			// Right now the behaviour of this is to terminate the connection
 			// when we run into an error; should it perhaps send a NAK response
 			// and keep the connection open for another retry?
