@@ -31,8 +31,14 @@
 // limitations under the License.
 package log
 
+import (
+	"fmt"
+	"runtime"
+)
+
 var (
 	internalLog *logMux
+	debugMode   bool
 )
 
 /*
@@ -61,19 +67,51 @@ so that we have a very simple API to get started with.
 */
 
 func Info(message string, v ...interface{}) {
-	internalLog.Info(message, v...)
+	// Prepend the log message with information about the calling function.
+	var fileMessage string
+	if debugMode {
+		_, f, l, _ := runtime.Caller(1)
+		fileMessage = fmt.Sprintf("(%s:%d) %s", f, l, message)
+	} else {
+		fileMessage = message
+	}
+	internalLog.Info(fileMessage, v...)
 }
 
 func Warning(message string, v ...interface{}) {
-	internalLog.Warning(message, v...)
+	// Prepend the log message with information about the calling function.
+	var fileMessage string
+	if debugMode {
+		_, f, l, _ := runtime.Caller(1)
+		fileMessage = fmt.Sprintf("(%s:%d) %s", f, l, message)
+	} else {
+		fileMessage = message
+	}
+	internalLog.Warning(fileMessage, v...)
 }
 
 func Error(message string, v ...interface{}) {
-	internalLog.Error(message, v...)
+	// Prepend the log message with information about the calling function.
+	var fileMessage string
+	if debugMode {
+		_, f, l, _ := runtime.Caller(1)
+		fileMessage = fmt.Sprintf("(%s:%d) %s", f, l, message)
+	} else {
+		fileMessage = message
+	}
+	internalLog.Error(fileMessage, v...)
 }
 
 func Debug(message string, v ...interface{}) {
-	internalLog.Debug(message, v...)
+	// Prepend the log message with information about the calling function.
+	var fileMessage string
+	if debugMode {
+		_, f, l, _ := runtime.Caller(1)
+		fileMessage = fmt.Sprintf("(%s:%d) %s", f, l, message)
+	} else {
+		fileMessage = message
+	}
+	internalLog.Debug(fileMessage, v...)
 }
 
 /*
@@ -81,4 +119,5 @@ DebugMode sets the debug mode option for this built-in logger.
 */
 func DebugMode(status bool) {
 	internalLog.DebugMode(status)
+	debugMode = status
 }
