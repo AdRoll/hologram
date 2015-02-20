@@ -30,7 +30,7 @@ setup: .setup-complete
 
 package: bin/darwin/Hologram-$(GIT_TAG).pkg bin/linux/hologram-$(GIT_TAG).deb bin/linux/hologram-server-$(GIT_TAG).deb
 
-build: bin/darwin/hologram-server bin/linux/hologram-server bin/darwin/hologram-agent bin/linux/hologram-agent bin/darwin/hologram-cli bin/linux/hologram-cli bin/darwin/hologram-authorize bin/linux/hologram-authorize
+build: bin/darwin/hologram-server bin/linux/hologram-server bin/darwin/hologram-agent bin/linux/hologram-agent bin/darwin/hologram-cli bin/linux/hologram-cli bin/darwin/hologram-authorize bin/linux/hologram-authorize bin/darwin/hologram-boot
 
 protocol/hologram.pb.go: protocol/hologram.proto
 	protoc --go_out=. protocol/hologram.proto
@@ -60,6 +60,10 @@ bin/%/hologram-cli: protocol/hologram.pb.go cli/*/*.go log/*.go log/.deps transp
 	@echo "Building CLI version $(GIT_TAG)$(GIT_DIRTY)"
 	@cd cli/bin; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-cli"
 
+bin/darwin/hologram-boot: tools/boot/main.go
+	@cd tools/boot/; go build
+	@mv tools/boot/boot bin/darwin/hologram-boot
+
 bin/ping: tools/ping/main.go log/*.go log/.deps
 	@cd tools/ping; go build
 	@mv tools/ping/ping bin/ping
@@ -72,7 +76,7 @@ bin/darwin/Hologram-%.pkg: bin/darwin/hologram-agent bin/darwin/hologram-cli bin
 	@cp ./bin/darwin/hologram-cli ./pkg/darwin/root/usr/bin/hologram
 	@cp ./bin/darwin/hologram-authorize ./pkg/darwin/root/usr/bin/hologram-authorize
 	@cp ./config/agent.json ./pkg/darwin/root/etc/hologram/agent.json
-	@cp ./agent/support/darwin/hologram-boot.sh ./pkg/darwin/root/usr/bin/hologram-boot
+	@cp ./bin/darwin/hologram-boot ./pkg/darwin/root/usr/bin/hologram-boot
 	@cp ./agent/support/darwin/com.adroll.hologram-ip.plist ./pkg/darwin/root/Library/LaunchDaemons
 	@cp ./agent/support/darwin/com.adroll.hologram.plist ./pkg/darwin/root/Library/LaunchDaemons
 	@cp ./agent/support/darwin/com.adroll.hologram-me.plist ./pkg/darwin/root/Library/LaunchAgents
