@@ -128,7 +128,7 @@ func TestLDAPUserCache(t *testing.T) {
 			Key:  keyValue,
 			Key2: testPublicKey,
 		}
-		lc, err := server.NewLDAPUserCache(s, g2s.Noop())
+		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "dc=testdn,dc=com")
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
