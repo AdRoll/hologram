@@ -70,6 +70,7 @@ Here are some issues we've run into running Hologram that you might want to be a
 
 * **Sometimes OS X workstations don't like SSH agent.** Some developers have needed to do `ssh-add -K` to add their key to the keychain; some have needed to do this every time they boot; and some just don't require it at all. Your mileage may vary.
 * **If you use an ELB to load-balance between Hologram servers, do not have it terminate the TLS connection.** It's pointless to have your ELB use the SSL certificate compiled into Hologram, when the servers themselves know how to handle it. Let them do their job, and have your ELB just use the TCP protocol.
+* **Your LDAP server might not support TLS** In that case, you'll want to set "insecureldap" to true in the server config file which will configure hologram to connect to the LDAP server without using TLS. Otherwise you might just get a (somewhat cryptic) "connection reset by peer" error.
 
 ## License
 
