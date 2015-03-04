@@ -103,14 +103,15 @@ bin/linux/hologram-server-%.deb: bin/linux/hologram-server server/after-install.
 	@cp ./server/before-remove.sh ./pkg/linux/hologram-server/scripts/before-remove.sh
 	@cp ./bin/linux/hologram-server ./pkg/linux/hologram-server/root/usr/local/bin/
 	@chmod a+x ./pkg/linux/hologram-server/root/etc/init.d/hologram
-	@fpm -s dir -t deb -f                                                  \
-		-n hologram-server                                                   \
-		-v $(GIT_TAG)                                                        \
-		--after-install ./pkg/linux/hologram-server/scripts/after-install.sh \
-		--before-remove ./pkg/linux/hologram-server/scripts/before-remove.sh \
-		-C ./pkg/linux/hologram-server/root                                  \
-		-p ./bin/linux/hologram-server-$(GIT_TAG).deb                        \
-		-a amd64                                                             \
+	@fpm -s dir -t deb -f                                                        \
+		-n hologram-server                                                       \
+		-v $(GIT_TAG)                                                            \
+		--after-install ./pkg/linux/hologram-server/scripts/after-install.sh     \
+		--before-remove ./pkg/linux/hologram-server/scripts/before-remove.sh     \
+		--config-files /etc/hologram/server.json \
+		-C ./pkg/linux/hologram-server/root                                      \
+		-p ./bin/linux/hologram-server-$(GIT_TAG).deb                            \
+		-a amd64                                                                 \
 		./
 
 bin/linux/hologram-%.deb: bin/linux/hologram-cli bin/linux/hologram-agent bin/linux/hologram-authorize
@@ -125,14 +126,15 @@ bin/linux/hologram-%.deb: bin/linux/hologram-cli bin/linux/hologram-agent bin/li
 	@cp ./agent/support/debian/before-remove.sh ./pkg/linux/hologram/scripts/
 	@cp ./agent/support/debian/init.sh ./pkg/linux/hologram/root/etc/init.d/hologram-agent
 	@chmod a+x ./pkg/linux/hologram/root/etc/init.d/hologram-agent
-	@fpm -s dir -t deb                                              \
-		-n hologram-agent                                             \
-		-v $(GIT_TAG)                                                 \
-		--after-install ./pkg/linux/hologram/scripts/after-install.sh \
-		--before-remove ./pkg/linux/hologram/scripts/before-remove.sh \
-		-C ./pkg/linux/hologram/root                                  \
-		-p ./bin/linux/hologram-$(GIT_TAG).deb                        \
-		-a amd64                                                      \
+	@fpm -s dir -t deb                                                   \
+		-n hologram-agent                                                \
+		-v $(GIT_TAG)                                                    \
+		--after-install ./pkg/linux/hologram/scripts/after-install.sh    \
+		--before-remove ./pkg/linux/hologram/scripts/before-remove.sh    \
+		--config-files /etc/hologram/agent.json \
+		-C ./pkg/linux/hologram/root                                     \
+		-p ./bin/linux/hologram-$(GIT_TAG).deb                           \
+		-a amd64                                                         \
 		./
 
 test: protocol/hologram.pb.go server/.deps agent/.deps transport/remote/bindata.go agent/bindata.go
