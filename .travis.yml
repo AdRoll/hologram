@@ -8,11 +8,11 @@ before_install:
     - wget --quiet https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
     - tar -zxf protobuf-2.6.1.tar.gz
     - cd protobuf-2.6.1 && ./configure --prefix=/usr > /dev/null && make > /dev/null && sudo make install > /dev/null && cd ..
+    - go get code.google.com/p/goprotobuf/proto
     - protoc --go_out=. protocol/hologram.proto > /dev/null
 
 install:
     - go get golang.org/x/crypto/ssh/...
-    - go get code.google.com/p/goprotobuf/proto
     - go get github.com/mitchellh/go-homedir
     - go get github.com/smartystreets/goconvey/...
     - go get github.com/nmcclain/ldap
