@@ -5,7 +5,8 @@ go:
   - tip
 
 before_install:
-    - sudo apt-get install jq protobuf
+    - sudo apt-get install jq protobuf-compiler
+    - protoc --go_out=. protocol/hologram.proto
 
 install:
     - go get golang.org/x/crypto/ssh/...
