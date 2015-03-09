@@ -4,6 +4,9 @@ go:
   - 1.4
   - tip
 
+before_install:
+    - sudo apt-get install jq protobuf
+
 install:
     - go get golang.org/x/crypto/ssh/...
     - go get code.google.com/p/goprotobuf/proto
