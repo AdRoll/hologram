@@ -5,7 +5,9 @@ go:
   - tip
 
 before_install:
-    - sudo apt-get install jq protobuf-compiler
+    - wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
+    - tar -zxvf protobuf-2.6.1.tar.gz
+    - cd protobuf-2.6.1 && ./configure --prefix=/usr && make && make install
     - protoc --go_out=. protocol/hologram.proto
 
 install:
