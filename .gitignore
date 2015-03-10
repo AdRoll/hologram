@@ -2,10 +2,7 @@ build/
 pkg/
 .texpadtmp/
 spec.pdf
-*.pb.go
 .deps
 /bin
 deploy/healthcheck
-transport/remote/bindata.go
-agent/bindata.go
 .hologram-package-config

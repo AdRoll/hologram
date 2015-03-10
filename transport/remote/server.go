@@ -13,6 +13,8 @@
 // limitations under the License.
 package remote
 
+//go:generate go-bindata -pkg remote self-signed-ca.cert self-signed.cert self-signed.key
+
 import (
 	"crypto/tls"
 	"github.com/AdRoll/hologram/protocol"
