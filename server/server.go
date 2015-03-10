@@ -41,6 +41,7 @@ type server struct {
 	stats         g2s.Statter
 	DefaultRole   string
 	ldapServer    LDAPImplementation
+	baseDN        string
 }
 
 /*
@@ -147,7 +148,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 
 		// Search for the user specified in this request.
 		sr := ldap.NewSearchRequest(
-			"dc=keeponprovoking,dc=com",
+			sm.baseDN,
 			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 			fmt.Sprintf("(cn=%s)", addSSHKeyMsg.GetUsername()),
 			[]string{"sshPublicKey", "cn", "userPassword"},
@@ -278,12 +279,13 @@ func makeCredsResponse(creds *sts.Credentials) *protocol.Message {
 New returns a server that can be used as a handler for a
 MessageConnection loop.
 */
-func New(a Authenticator, c CredentialService, r string, s g2s.Statter, l LDAPImplementation) *server {
+func New(a Authenticator, c CredentialService, r string, s g2s.Statter, l LDAPImplementation, b string) *server {
 	return &server{
 		credentials:   c,
 		authenticator: a,
 		stats:         s,
 		DefaultRole:   r,
 		ldapServer:    l,
+		baseDN:        b,
 	}
 }

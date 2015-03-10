@@ -56,6 +56,7 @@ type ldapUserCache struct {
 	users  map[string]*User
 	server LDAPImplementation
 	stats  g2s.Statter
+	baseDN string
 }
 
 /*
@@ -69,7 +70,7 @@ func (luc *ldapUserCache) Update() error {
 	start := time.Now()
 	filter := "(sshPublicKey=*)"
 	searchRequest := ldap.NewSearchRequest(
-		"dc=keeponprovoking,dc=com",
+		luc.baseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		0, 0, false,
 		filter, []string{"sshPublicKey", "cn"},
@@ -150,11 +151,12 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 /*
 NewLDAPUserCache returns a properly-configured LDAP cache.
 */
-func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter) (*ldapUserCache, error) {
+func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, baseDN string) (*ldapUserCache, error) {
 	retCache := &ldapUserCache{
 		users:  map[string]*User{},
 		server: server,
 		stats:  stats,
+		baseDN: baseDN,
 	}
 
 	updateError := retCache.Update()
