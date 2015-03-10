@@ -153,9 +153,8 @@ func main() {
 		}
 	}
 
-	bindErr := ldapServer.Bind(config.LDAP.Bind.DN, config.LDAP.Bind.Password)
-	if bindErr != nil {
-		log.Error("Could not bind to LDAP! %s", err.Error())
+	if bindErr := ldapServer.Bind(config.LDAP.Bind.DN, config.LDAP.Bind.Password); bindErr != nil {
+		log.Error("Could not bind to LDAP! %s", bindErr.Error())
 		os.Exit(1)
 	}
 
