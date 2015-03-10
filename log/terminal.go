@@ -15,8 +15,9 @@ package log
 
 import (
 	"fmt"
-	"github.com/aybabtme/rgbterm"
 	"time"
+
+	"github.com/aybabtme/rgbterm"
 )
 
 /*
@@ -40,20 +41,20 @@ func (ss *terminalSink) Info(message string) {
 func (ss *terminalSink) Debug(message string) {
 	messageTime := time.Now().Format(time.RFC3339)
 	leveledMessage := fmt.Sprintf("[DEBUG  ] %s %s", messageTime, message)
-	colouredMessage := rgbterm.String(leveledMessage, 42, 161, 152)
+	colouredMessage := rgbterm.FgString(leveledMessage, 42, 161, 152)
 	fmt.Println(colouredMessage)
 }
 
 func (ss *terminalSink) Warning(message string) {
 	messageTime := time.Now().Format(time.RFC3339)
 	leveledMessage := fmt.Sprintf("[WARNING] %s %s", messageTime, message)
-	colouredMessage := rgbterm.String(leveledMessage, 181, 137, 0)
+	colouredMessage := rgbterm.FgString(leveledMessage, 181, 137, 0)
 	fmt.Println(colouredMessage)
 }
 
 func (ss *terminalSink) Error(message string) {
 	messageTime := time.Now().Format(time.RFC3339)
 	leveledMessage := fmt.Sprintf("[ERROR  ] %s %s", messageTime, message)
-	colouredMessage := rgbterm.String(leveledMessage, 220, 50, 47)
+	colouredMessage := rgbterm.FgString(leveledMessage, 220, 50, 47)
 	fmt.Println(colouredMessage)
 }

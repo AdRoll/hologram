@@ -1,4 +1,4 @@
-# Hologram
+# Hologram [![Build Status](https://travis-ci.org/AdRoll/hologram.svg?branch=master)](https://travis-ci.org/AdRoll/hologram)
 
 ## Overview
 Storing your AWS keys in source code is a Real Bad Idea, but few good options exist to mitigate this risk that aren't terribly inconvenient. Hologram aims to change this.
