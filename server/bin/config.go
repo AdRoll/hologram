@@ -19,7 +19,8 @@ type Config struct {
 			DN       string `json:"dn"`
 			Password string `json:"password"`
 		} `json:"bind"`
-		Host string `json:"host"`
+		Host         string `json:"host"`
+		InsecureLDAP bool   `json:"insecureldap"`
 	} `json:"ldap"`
 	AWS struct {
 		Account     string `json:"account"`
