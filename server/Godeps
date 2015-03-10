@@ -1,6 +1,0 @@
-code.google.com/p/goprotobuf/proto release
-code.google.com/p/goprotobuf/protoc-gen-go release
-github.com/smartystreets/goconvey e4cef38b8924b3cff6d84a524e8fe938ad0bcbf2
-github.com/nmcclain/ldap f4e67fa4cd924fbe6f271611514caf5589e6a6e5
-github.com/peterbourgon/g2s ec76db4c1ac16400ac0e17ca9c4840e1d23da5dc
-golang.org/x/crypto/ssh 60a80aaa50ff

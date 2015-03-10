@@ -24,7 +24,7 @@ setup: .setup-complete
 	@go get github.com/mitchellh/gox
 	@go get github.com/jteeuwen/go-bindata/...
 	@gox -build-toolchain -osarch="linux/amd64 darwin/amd64"
-	@brew install gpm jq protobuf
+	@brew install gpm protobuf
 	@sudo gem install fpm deb-s3
 	@touch .setup-complete
 
@@ -32,41 +32,32 @@ package: bin/darwin/Hologram-$(GIT_TAG).pkg bin/linux/hologram-$(GIT_TAG).deb bi
 
 build: bin/darwin/hologram-server bin/linux/hologram-server bin/darwin/hologram-agent bin/linux/hologram-agent bin/darwin/hologram-cli bin/linux/hologram-cli bin/darwin/hologram-authorize bin/linux/hologram-authorize bin/darwin/hologram-boot
 
-protocol/hologram.pb.go: protocol/hologram.proto
-	protoc --go_out=. protocol/hologram.proto
+.deps: Godeps
+	gpm install && touch .deps
 
-transport/remote/bindata.go: transport/remote/self-signed-ca.cert transport/remote/self-signed.cert transport/remote/self-signed.key
-	cd transport/remote; go-bindata -pkg remote self-signed-ca.cert self-signed.cert self-signed.key
-
-agent/bindata.go: agent/test_ssh_key
-	cd agent; go-bindata -pkg agent test_ssh_key
-
-%/.deps: %/Godeps
-	cd $*; gpm install; touch .deps
-
-bin/%/hologram-agent: protocol/hologram.pb.go agent/.deps agent/*.go agent/*/*.go log/*.go log/.deps transport/remote/*.go transport/local/*.go transport/remote/bindata.go
+bin/%/hologram-agent: protocol/hologram.pb.go .deps agent/*.go cmd/hologram-agent/*.go log/*.go transport/remote/*.go transport/local/*.go
 	@echo "Building agent version $(GIT_TAG)$(GIT_DIRTY)"
-	@cd agent/bin; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-agent"
+	@cd cmd/hologram-agent; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-agent"
 
-bin/%/hologram-server: protocol/hologram.pb.go server/.deps server/*.go server/*/*.go log/*.go log/.deps transport/remote/*.go transport/remote/bindata.go
+bin/%/hologram-server: protocol/hologram.pb.go .deps server/*.go cmd/hologram-server/*.go log/*.go transport/remote/*.go
 	@echo "Building server version $(GIT_TAG)$(GIT_DIRTY)"
-	@cd server/bin; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-server"
+	@cd cmd/hologram-server; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-server"
 
-bin/%/hologram-authorize: protocol/hologram.pb.go tools/install/*.go log/*.go log/.deps transport/remote/*.go transport/remote/bindata.go
+bin/%/hologram-authorize: protocol/hologram.pb.go cmd/hologram-authorize/*.go log/*.go .deps transport/remote/*.go
 	@echo "Building SSH key updater version $(GIT_TAG)$(GIT_DIRTY)"
-	@cd tools/install; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-authorize"
+	@cd cmd/hologram-authorize; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-authorize"
 
-bin/%/hologram-cli: protocol/hologram.pb.go cli/*/*.go log/*.go log/.deps transport/local/*.go cli/.deps
+bin/%/hologram-cli: protocol/hologram.pb.go cmd/hologram-cli/*.go log/*.go .deps transport/local/*.go
 	@echo "Building CLI version $(GIT_TAG)$(GIT_DIRTY)"
-	@cd cli/bin; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-cli"
+	@cd cmd/hologram-cli; gox -osarch="$*/amd64" -output="../../bin/$*/hologram-cli"
 
-bin/darwin/hologram-boot: tools/boot/main.go
-	@cd tools/boot/; go build
-	@mv tools/boot/boot bin/darwin/hologram-boot
+bin/darwin/hologram-boot: cmd/hologram-boot/main.go
+	@cd cmd/hologram-boot/; go build
+	@mv cmd/hologram-boot/hologram-boot bin/darwin/hologram-boot
 
-bin/ping: tools/ping/main.go log/*.go log/.deps
-	@cd tools/ping; go build
-	@mv tools/ping/ping bin/ping
+bin/ping: cmd/ping/main.go log/*.go .deps
+	@cd cmd/hologram-ping; go build
+	@mv cmd/ping/hologram-ping bin/hologram-ping
 
 bin/darwin/Hologram-%.pkg: bin/darwin/hologram-agent bin/darwin/hologram-cli bin/darwin/hologram-authorize agent/support/darwin/com.adroll.hologram*.plist agent/support/darwin/postinstall.sh
 	@echo "Creating temporary directory for pkgbuild..."
@@ -83,8 +74,6 @@ bin/darwin/Hologram-%.pkg: bin/darwin/hologram-agent bin/darwin/hologram-cli bin
 	@cp ./agent/support/darwin/postinstall.sh ./pkg/darwin/scripts/postinstall
 	@chmod a+x ./pkg/darwin/root/usr/bin/hologram*
 	@chmod a+x ./pkg/darwin/scripts/postinstall
-	@echo "Changing ownership of files - you will need to sudo here!"
-	@sudo chown -R root:wheel ./pkg/darwin
 	@echo "Building installer package..."
 	@pkgbuild --root ./pkg/darwin/root \
 		--identifier com.adroll.hologram \
@@ -137,7 +126,7 @@ bin/linux/hologram-%.deb: bin/linux/hologram-cli bin/linux/hologram-agent bin/li
 		-a amd64                                                         \
 		./
 
-test: protocol/hologram.pb.go server/.deps agent/.deps transport/remote/bindata.go agent/bindata.go
+test: .deps
 	@echo "Running test suite."
 	@go test ./... -v -cover
 
