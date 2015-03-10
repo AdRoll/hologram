@@ -13,7 +13,7 @@ before_install:
   - export PATH="$HOME/gopath/bin:$PATH"
   - protoc --go_out=. protocol/hologram.proto > /dev/null
   - cd agent && go-bindata -pkg agent test_ssh_key && cd ..
-  - cd transport/remote && go-bindata -pkg remote self-signed-ca.cert self-signed.cert self-signed.key && cd ..
+  - cd transport/remote && go-bindata -pkg remote self-signed-ca.cert self-signed.cert self-signed.key && cd ../..
 
 install:
   - go get code.google.com/p/goprotobuf/proto
