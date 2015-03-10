@@ -13,6 +13,8 @@
 // limitations under the License.
 package agent
 
+//go:generate go-bindata -pkg agent test_ssh_key
+
 /*
 Service implements background workers and servers.
 */

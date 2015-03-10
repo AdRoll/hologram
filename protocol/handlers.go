@@ -13,6 +13,8 @@
 // limitations under the License.
 package protocol
 
+//go:generate protoc --go_out=. hologram.proto
+
 import "io"
 
 /*
