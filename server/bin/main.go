@@ -38,6 +38,7 @@ func main() {
 		listenAddress    = flag.String("addr", "", "Address to listen to incoming requests on.")
 		ldapAddress      = flag.String("ldapAddr", "", "Address to connect to LDAP.")
 		ldapBindDN       = flag.String("ldapBindDN", "", "LDAP DN to bind to for login.")
+		ldapInsecure     = flag.Bool("insecureLDAP", false, "INSECURE: Don't use TLS for LDAP connection.")
 		ldapBindPassword = flag.String("ldapBindPassword", "", "LDAP password for bind.")
 		statsdHost       = flag.String("stats", "", "Address to send statsd metrics to.")
 		iamAccount       = flag.String("account", "", "AWS Account ID for generating IAM Role ARNs")
@@ -72,6 +73,10 @@ func main() {
 	// Merge in command flag options.
 	if *ldapAddress != "" {
 		config.LDAP.Host = *ldapAddress
+	}
+
+	if *ldapInsecure {
+		config.LDAP.InsecureLDAP = true
 	}
 
 	if *ldapBindDN != "" {
@@ -124,16 +129,28 @@ func main() {
 	stsConnection := sts.New(auth, aws.Regions["us-east-1"])
 	credentialsService := server.NewDirectSessionTokenService(config.AWS.Account, stsConnection)
 
-	// Connect to the LDAP server with sample credentials.
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
-	}
+	var ldapServer *ldap.Conn
 
-	log.Debug("Connecting to LDAP at server %s.", config.LDAP.Host)
-	ldapServer, err := ldap.DialTLS("tcp", config.LDAP.Host, tlsConfig)
-	if err != nil {
-		log.Error("Could not dial LDAP! %s", err.Error())
-		os.Exit(1)
+	// Connect to the LDAP server using TLS or not depending on the config
+	if config.LDAP.InsecureLDAP {
+		log.Debug("Connecting to LDAP at server %s (NOT using TLS).", config.LDAP.Host)
+		ldapServer, err = ldap.Dial("tcp", config.LDAP.Host)
+		if err != nil {
+			log.Error("Could not dial LDAP! %s", err.Error())
+			os.Exit(1)
+		}
+	} else {
+		// Connect to the LDAP server with sample credentials.
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+		}
+
+		log.Debug("Connecting to LDAP at server %s.", config.LDAP.Host)
+		ldapServer, err = ldap.DialTLS("tcp", config.LDAP.Host, tlsConfig)
+		if err != nil {
+			log.Error("Could not dial LDAP! %s", err.Error())
+			os.Exit(1)
+		}
 	}
 
 	bindErr := ldapServer.Bind(config.LDAP.Bind.DN, config.LDAP.Bind.Password)
