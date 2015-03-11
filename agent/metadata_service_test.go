@@ -72,7 +72,7 @@ func TestMetadataService(t *testing.T) {
 			So(creds.LastUpdated, ShouldNotBeNil)
 			So(creds.LastUpdated, ShouldNotBeEmpty)
 			So(creds.Type, ShouldEqual, "AWS-HMAC")
-			So(creds.AccessKeyId, ShouldEqual, "access_key")
+			So(creds.AccessKeyID, ShouldEqual, "access_key")
 			So(creds.SecretAccessKey, ShouldEqual, "secret")
 			So(creds.Token, ShouldEqual, "token")
 			So(creds.Expiration, ShouldEqual, "2014-10-22T12:21:17Z")

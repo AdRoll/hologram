@@ -32,7 +32,7 @@ var (
 
 // We restrict messages to 1Mb in size as a precaution against a single
 // message just filling up all available memory on the server.
-const MAXIMUM_MESSAGE_SIZE uint32 = 1024 * 1024
+const MaximumMessageSize uint32 = 1024 * 1024
 
 // header comprises a structured dataset for all parties involved
 // in message-passing to verify received data.
@@ -90,8 +90,8 @@ func Read(r io.Reader) (*Message, error) {
 		return nil, err
 	}
 
-	if incomingHeader.ContentLength > MAXIMUM_MESSAGE_SIZE {
-		return nil, errors.New(fmt.Sprintf("message too large: requested %d bytes but max is %d", incomingHeader.ContentLength, MAXIMUM_MESSAGE_SIZE))
+	if incomingHeader.ContentLength > MaximumMessageSize {
+		return nil, fmt.Errorf("message too large: requested %d bytes but max is %d", incomingHeader.ContentLength, MaximumMessageSize)
 	}
 
 	msg := new(Message)

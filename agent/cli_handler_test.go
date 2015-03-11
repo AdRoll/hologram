@@ -26,12 +26,12 @@ type dummyClient struct {
 }
 
 func (c *dummyClient) AssumeRole(user string, role string) error {
-	c.callCount += 1
+	c.callCount++
 	return nil
 }
 
 func (c *dummyClient) GetUserCredentials() error {
-	c.callCount += 1
+	c.callCount++
 	return nil
 }
 

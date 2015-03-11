@@ -29,7 +29,7 @@ type WimpyWriter struct {
 }
 
 func (w *WimpyWriter) Write(p []byte) (n int, err error) {
-	w.bytesWritten += 1
+	w.bytesWritten++
 	return 1, nil
 }
 

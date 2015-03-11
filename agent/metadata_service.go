@@ -69,11 +69,9 @@ func (mds *metadataService) listen() {
 		if strings.HasSuffix(err.Error(), "use of closed network connection") {
 			// this happens when Close() is called, and it's normal
 			return
-		} else {
-			panic(err)
 		}
+		panic(err)
 	}
-
 }
 
 /*
@@ -132,7 +130,7 @@ func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Reques
 		Code:            "Success",
 		LastUpdated:     time.Now().UTC().Format(time.RFC3339),
 		Type:            "AWS-HMAC",
-		AccessKeyId:     creds.AccessKeyId,
+		AccessKeyID:     creds.AccessKeyId,
 		SecretAccessKey: creds.SecretAccessKey,
 		Token:           creds.SessionToken,
 		Expiration:      creds.Expiration.UTC().Format(time.RFC3339),
@@ -158,5 +156,5 @@ func NewMetadataService(listener net.Listener, creds CredentialsSource) (Metadat
 Structure encoded as JSON for credential clients.
 */
 type securityCredentialsResponse struct {
-	Code, LastUpdated, Type, AccessKeyId, SecretAccessKey, Token, Expiration string
+	Code, LastUpdated, Type, AccessKeyID, SecretAccessKey, Token, Expiration string
 }

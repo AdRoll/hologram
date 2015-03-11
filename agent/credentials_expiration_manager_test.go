@@ -27,12 +27,12 @@ type dummyClient2 struct {
 }
 
 func (d *dummyClient2) AssumeRole(user string, role string) error {
-	d.assumeRoleCount += 1
+	d.assumeRoleCount++
 	return nil
 }
 
 func (d *dummyClient2) GetUserCredentials() error {
-	d.getUserCredentialsCount += 1
+	d.getUserCredentialsCount++
 	return nil
 }
 

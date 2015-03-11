@@ -90,7 +90,7 @@ func Warning(message string, v ...interface{}) {
 	internalLog.Warning(fileMessage, v...)
 }
 
-func Error(message string, v ...interface{}) {
+func Errorf(message string, v ...interface{}) {
 	// Prepend the log message with information about the calling function.
 	var fileMessage string
 	if debugMode {
