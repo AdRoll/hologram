@@ -18,6 +18,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"flag"
+	"io/ioutil"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/server"
 	"github.com/AdRoll/hologram/transport/remote"
@@ -25,11 +31,6 @@ import (
 	"github.com/goamz/goamz/sts"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
-	"io/ioutil"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 func main() {

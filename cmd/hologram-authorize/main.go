@@ -5,14 +5,15 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net"
+	"os"
+
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
 	"github.com/mitchellh/go-homedir"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"io/ioutil"
-	"net"
-	"os"
 )
 
 type Config struct {

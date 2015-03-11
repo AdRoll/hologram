@@ -15,8 +15,9 @@
 package local
 
 import (
-	"github.com/AdRoll/hologram/protocol"
 	"net"
+
+	"github.com/AdRoll/hologram/protocol"
 )
 
 /*

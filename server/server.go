@@ -18,13 +18,14 @@ package server
 import (
 	"errors"
 	"fmt"
+	"math/rand"
+
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/goamz/goamz/sts"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	"golang.org/x/crypto/ssh"
-	"math/rand"
 )
 
 type Authenticator interface {

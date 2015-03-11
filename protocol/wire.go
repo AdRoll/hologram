@@ -16,12 +16,13 @@
 package protocol
 
 import (
-	"code.google.com/p/goprotobuf/proto"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"hash/crc32"
 	"io"
+
+	"code.google.com/p/goprotobuf/proto"
 )
 
 // Common errors we'll run into.

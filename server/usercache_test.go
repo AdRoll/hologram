@@ -16,16 +16,17 @@ package server_test
 import (
 	cryptrand "crypto/rand"
 	"encoding/base64"
+	"math/rand"
+	"net"
+	"os"
+	"testing"
+
 	"github.com/AdRoll/hologram/server"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"math/rand"
-	"net"
-	"os"
-	"testing"
 )
 
 // This key is pretty much guaranteed to be unique.

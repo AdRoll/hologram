@@ -16,11 +16,12 @@ package agent
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/goamz/goamz/sts"
 	"net"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/goamz/goamz/sts"
 )
 
 /*

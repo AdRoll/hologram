@@ -14,10 +14,11 @@
 package agent
 
 import (
-	"github.com/goamz/goamz/sts"
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
 	"time"
+
+	"github.com/goamz/goamz/sts"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type dummyClient2 struct {

@@ -17,13 +17,14 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"github.com/AdRoll/hologram/agent"
-	"github.com/AdRoll/hologram/log"
 	"io/ioutil"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/AdRoll/hologram/agent"
+	"github.com/AdRoll/hologram/log"
 )
 
 var (

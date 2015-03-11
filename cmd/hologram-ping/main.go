@@ -3,8 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/AdRoll/hologram/protocol"
 	"net"
+
+	"github.com/AdRoll/hologram/protocol"
 )
 
 var host = flag.String("host", "localhost", "IP or hostname to ping")

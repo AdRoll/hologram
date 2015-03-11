@@ -18,6 +18,7 @@ package server
 
 import (
 	"fmt"
+
 	"github.com/goamz/goamz/sts"
 )
 

@@ -15,11 +15,12 @@ package protocol
 
 import (
 	"bytes"
-	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"math/rand"
 	"testing"
 	"time"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // WimpyWriter is a hampered Writer that can only process 1 byte at a time.
