@@ -18,13 +18,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"os/user"
+
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/local"
 	"github.com/mitchellh/go-homedir"
-	"io/ioutil"
-	"os"
-	"os/user"
 )
 
 func main() {

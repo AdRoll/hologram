@@ -14,10 +14,11 @@
 package remote_test
 
 import (
+	"testing"
+
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
 	. "github.com/smartystreets/goconvey/convey"
-	"testing"
 )
 
 func testHandler(msc protocol.MessageReadWriteCloser) {

@@ -15,8 +15,9 @@ package agent
 
 import (
 	"errors"
-	"github.com/goamz/goamz/sts"
 	"time"
+
+	"github.com/goamz/goamz/sts"
 )
 
 type credentialsExpirationManager struct {

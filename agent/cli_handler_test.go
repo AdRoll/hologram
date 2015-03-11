@@ -14,10 +14,11 @@
 package agent
 
 import (
-	"github.com/AdRoll/hologram/protocol"
-	. "github.com/smartystreets/goconvey/convey"
 	"io"
 	"testing"
+
+	"github.com/AdRoll/hologram/protocol"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type dummyClient struct {

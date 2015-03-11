@@ -16,10 +16,11 @@ package agent
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
 	"github.com/goamz/goamz/sts"
-	"time"
 )
 
 type CredentialsReceiver interface {

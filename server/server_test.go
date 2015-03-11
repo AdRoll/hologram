@@ -16,6 +16,11 @@
 package server_test
 
 import (
+	"io"
+	"reflect"
+	"testing"
+	"time"
+
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/server"
 	"github.com/goamz/goamz/sts"
@@ -23,10 +28,6 @@ import (
 	"github.com/peterbourgon/g2s"
 	. "github.com/smartystreets/goconvey/convey"
 	"golang.org/x/crypto/ssh"
-	"io"
-	"reflect"
-	"testing"
-	"time"
 )
 
 // Define a logger that does nothing, for these tests.

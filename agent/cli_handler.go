@@ -14,10 +14,11 @@
 package agent
 
 import (
+	"os"
+
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/local"
-	"os"
 )
 
 type cliHandler struct {

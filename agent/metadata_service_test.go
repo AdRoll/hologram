@@ -17,12 +17,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/goamz/goamz/sts"
-	. "github.com/smartystreets/goconvey/convey"
 	"net"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/goamz/goamz/sts"
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 type dummyCredentialsSource struct {

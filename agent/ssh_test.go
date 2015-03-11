@@ -14,10 +14,11 @@
 package agent
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"math/rand"
 	"os"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func randomBytes(length int) []byte {

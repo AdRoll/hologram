@@ -15,11 +15,12 @@ package server
 
 import (
 	"encoding/base64"
+	"time"
+
 	"github.com/AdRoll/hologram/log"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	"golang.org/x/crypto/ssh"
-	"time"
 )
 
 /*

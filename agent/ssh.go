@@ -16,10 +16,11 @@ package agent
 import (
 	"crypto/rand"
 	"errors"
+	"net"
+
 	"github.com/AdRoll/hologram/log"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"net"
 )
 
 var (
