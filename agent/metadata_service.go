@@ -130,7 +130,7 @@ func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Reques
 		Code:            "Success",
 		LastUpdated:     time.Now().UTC().Format(time.RFC3339),
 		Type:            "AWS-HMAC",
-		AccessKeyID:     creds.AccessKeyId,
+		AccessKeyId:     creds.AccessKeyId,
 		SecretAccessKey: creds.SecretAccessKey,
 		Token:           creds.SessionToken,
 		Expiration:      creds.Expiration.UTC().Format(time.RFC3339),
@@ -156,5 +156,5 @@ func NewMetadataService(listener net.Listener, creds CredentialsSource) (Metadat
 Structure encoded as JSON for credential clients.
 */
 type securityCredentialsResponse struct {
-	Code, LastUpdated, Type, AccessKeyID, SecretAccessKey, Token, Expiration string
+	Code, LastUpdated, Type, AccessKeyId, SecretAccessKey, Token, Expiration string
 }
