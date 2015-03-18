@@ -158,5 +158,11 @@ func NewMetadataService(listener net.Listener, creds CredentialsSource) (Metadat
 Structure encoded as JSON for credential clients.
 */
 type securityCredentialsResponse struct {
-	Code, LastUpdated, Type, AccessKeyId, SecretAccessKey, Token, Expiration string
+	Code            string `json:"Code"`
+	LastUpdated     string `json:"LastUpdated"`
+	Type            string `json:"Type"`
+	AccessKeyId     string `json:"AccessKeyId"`
+	SecretAccessKey string `json:"SecretAccessKey"`
+	Token           string `json:"Token"`
+	Expiration      string `json:"Expiration"`
 }
