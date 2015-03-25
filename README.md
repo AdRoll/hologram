@@ -54,9 +54,22 @@ If you use Boto or any of the official AWS SDKs, your code is already able to ta
 By default, and at boot, Hologram is configured to hand out credentials for the "developer" role specified in `server.json`. Credentials will be automatically refreshed by Hologram as needed by calling programs.
 
 ### Roles
+The role of the hologram server must have assume role permissions.  See permissions.json for an example to grant access to all roles - you can limit the roles here.
+
 For different projects it is recommended that you create IAM roles for each and have your developers assume these roles for testing the software. Hologram supports a command `hologram use <rolename>` which will fetch temporary credentials for this role instead of the default developer one until it is reset or another role is assumed.
 
-You will need to modify the Trusted Entities for each of these roles that you create so that the IAM instance profile you created for the Hologram Server can access them. (Fill in with more information once we actually do this internally.)
+You will need to modify the Trusted Entities for each of these roles that you create so that the IAM instance profile you created for the Hologram Server can access them. The hologram user must have permission to assume that role. 
+
+```json
+    {
+      "Sid": "account",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::<aws_account_id>:root"
+      },
+      "Action": "sts:AssumeRole"
+    }
+```
 
 ## Deployment Suggestions
 At AdRoll we have Hologram deployed in a fault-tolerant setup, with the following:
