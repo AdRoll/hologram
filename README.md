@@ -26,7 +26,7 @@ Hologram requires the following things to already be setup:
 * Developers using Hologram must be running OS X or Linux machines. The built packages support Debian derivatives. No Windows support is planned, but patches are welcome.
 
 ## Installation
-Hologram currently doesn't ship pre-compiled binaries, so you'll need to build it yourself. A docker container is provided that contains all that's needed to test, compile and build hologram packages for both debian and osx. You just need to invoke the script from the same directory where the hologram source lives. This is a full example of and testing and building packages for all supported platforms.
+Hologram currently doesn't ship pre-compiled binaries, so you'll need to build it yourself. A docker container is provided that contains all that's needed to test, compile and build hologram packages for both debian and osx. You just need to invoke the script from the same directory where the hologram source lives. This is a full example of testing and building packages for all supported platforms.
 ```
 ➞  ./hologram.sh build_all
     >> Getting package github.com/golang/protobuf/...
