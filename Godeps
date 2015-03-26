@@ -1,4 +1,4 @@
-github.com/golang/protobuf/proto a8323e2cd7e8ba8596aeb64a2ae304ddcd7dfbc0
+github.com/golang/protobuf/... a8323e2cd7e8ba8596aeb64a2ae304ddcd7dfbc0
 golang.org/x/crypto/ssh 88b65fb66346493d43e735adad931bf69dee4297
 github.com/aybabtme/rgbterm c07e2f009ed2311e9c35bca12ec00b38ccd48283
 github.com/mitchellh/go-homedir 7d2d8c8a4e078ce3c58736ab521a40b37a504c52
