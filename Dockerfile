@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
                                 ruby \
                                 ruby-dev
 
-RUN gem install fpm --no-rdoc
+RUN gem install fpm --no-rdoc --no-ri
 
 RUN cd /tmp && wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz && tar -zxvf protobuf-2.6.1.tar.gz > /dev/null && cd protobuf-2.6.1 && ./configure --prefix=/usr > /dev/null && make > /dev/null && make install > /dev/null && rm -rf /tmp/protobuf-2.6.1 protobuf-2.6.1.tar.gz
 
@@ -27,7 +27,7 @@ RUN cd /tmp && wget https://github.com/google/protobuf/releases/download/v2.6.1/
 
 WORKDIR /tmp
 # Get dependencies for building hologram
-run go get github.com/jteeuwen/go-bindata/...
+RUN go get github.com/jteeuwen/go-bindata/...
 RUN git clone https://github.com/pote/gpm.git && cd gpm && ./configure && make install && rm -rf /tmp/gpm
 RUN wget http://xar.googlecode.com/files/xar-1.5.2.tar.gz && tar xf xar-1.5.2.tar.gz && cd xar-1.5.2 && ./configure && make && make install && rm -rf /tmp/xar-1.5.2
 RUN git clone https://github.com/hogliux/bomutils.git > /dev/null && cd bomutils && make > /dev/null && make install  > /dev/null && rm -rf /tmp/bomutils
