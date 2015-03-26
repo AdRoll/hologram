@@ -6,8 +6,6 @@ go:
 
 install:
   - git clone https://github.com/pote/gpm.git && cd gpm && ./configure
-  - pwd
-  - ls -R gpm
-  - gpm/bin/gpm install
+  - bin/gpm install
 
 script: go test -v ./...
