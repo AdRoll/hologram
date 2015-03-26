@@ -88,10 +88,12 @@ Hologram currently doesn't ship pre-compiled binaries, so you'll need to build i
     2 blocks
     osx package has been built
 ```
+
 To access the full development environment, with all the needed dependencies and cross-compiling support just do:
 ```
     $ ./hologram.sh console
 ```
+Please note that you'll probably need to update the `config/{agent,server}.json` files included for your particular deployment. If you edit these, they will be included in the compiled packages. You may distribute the files in any other way you may wish, but note that they must be in this format, at `/etc/hologram/agent.json` and `/etc/hologram/server.json` respectively.
 
 ### Deployment
 1. Launch an EC2 instance with an instance profile with permissions detailed in `permissions.json`.
