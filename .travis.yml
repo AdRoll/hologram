@@ -5,7 +5,6 @@ go:
   - tip
 
 install:
-  - git clone https://github.com/pote/gpm.git && cd gpm && ./configure && make install
-  - gpm install
+  - git clone https://github.com/pote/gpm.git && cd gpm && ./configure && bin/gpm install
 
 script: go test -v ./...
