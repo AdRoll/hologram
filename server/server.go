@@ -57,7 +57,7 @@ func (sm *server) HandleConnection(m protocol.MessageReadWriteCloser) {
 		if err != nil {
 			// EOFs are normal, so we don't want to report them as errors.
 			if err.Error() != "EOF" {
-				log.Error("Error reading data from stream: %s", err.Error())
+				log.Errorf("Error reading data from stream: %s", err.Error())
 			}
 			// Right now the behaviour of this is to terminate the connection
 			// when we run into an error; should it perhaps send a NAK response
@@ -103,7 +103,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		user, err := sm.SSHChallenge(m)
 
 		if err != nil {
-			log.Error("Error trying to handle AssumeRole: %s", err.Error())
+			log.Errorf("Error trying to handle AssumeRole: %s", err.Error())
 			m.Close()
 			return
 		}
@@ -116,7 +116,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 				errMsg := &protocol.Message{
 					Error: &errStr,
 				}
-				log.Error("Error from AWS for AssumeRole: %s", err.Error())
+				log.Errorf("Error from AWS for AssumeRole: %s", err.Error())
 				m.Write(errMsg)
 				sm.stats.Counter(1.0, "errors.assumeRole", 1)
 				//m.Close()
@@ -129,7 +129,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		sm.stats.Counter(1.0, "messages.getUserCredentialsMsg", 1)
 		user, err := sm.SSHChallenge(m)
 		if err != nil {
-			log.Error("Error trying to handle GetUserCredentials: %s", err.Error())
+			log.Errorf("Error trying to handle GetUserCredentials: %s", err.Error())
 			m.Close()
 			return
 		}
@@ -137,7 +137,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		if user != nil {
 			creds, err := sm.credentials.AssumeRole(user, sm.DefaultRole)
 			if err != nil {
-				log.Error("Error trying to handle GetUserCredentials: %s", err.Error())
+				log.Errorf("Error trying to handle GetUserCredentials: %s", err.Error())
 				m.Close()
 				return
 			}
@@ -157,19 +157,19 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 
 		user, err := sm.ldapServer.Search(sr)
 		if err != nil {
-			log.Error("Error trying to handle addSSHKeyMsg: %s", err.Error())
+			log.Errorf("Error trying to handle addSSHKeyMsg: %s", err.Error())
 			return
 		}
 
 		if len(user.Entries) == 0 {
-			log.Error("User %s not found!", addSSHKeyMsg.GetUsername())
+			log.Errorf("User %s not found!", addSSHKeyMsg.GetUsername())
 			return
 		}
 
 		// Check their password.
 		password := user.Entries[0].GetAttributeValue("userPassword")
 		if password != addSSHKeyMsg.GetPasswordhash() {
-			log.Error("Provided password for user %s does not match %s!", addSSHKeyMsg.GetUsername(), password)
+			log.Errorf("Provided password for user %s does not match %s!", addSSHKeyMsg.GetUsername(), password)
 			return
 		}
 
@@ -187,7 +187,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		mr.Add("sshPublicKey", []string{addSSHKeyMsg.GetSshkeybytes()})
 		err = sm.ldapServer.Modify(mr)
 		if err != nil {
-			log.Error("Could not modify LDAP user: %s", err.Error())
+			log.Errorf("Could not modify LDAP user: %s", err.Error())
 			return
 		}
 
@@ -246,18 +246,18 @@ func (sm *server) SSHChallenge(m protocol.MessageReadWriteCloser) (*User, error)
 		if verifiedUser != nil {
 			log.Debug("Verification completed for user %s!", verifiedUser.Username)
 			return verifiedUser, nil
-		} else {
-			// continue around the loop, letting the client try another key
-			verificationFailure := &protocol.Message{
-				ServerResponse: &protocol.ServerResponse{
-					VerificationFailure: &protocol.SSHVerificationFailure{},
-				},
-			}
-			err = m.Write(verificationFailure)
-			if err != nil {
-				return nil, err
-			}
 		}
+		// continue around the loop, letting the client try another key
+		verificationFailure := &protocol.Message{
+			ServerResponse: &protocol.ServerResponse{
+				VerificationFailure: &protocol.SSHVerificationFailure{},
+			},
+		}
+		err = m.Write(verificationFailure)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 }
 

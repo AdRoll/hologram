@@ -90,7 +90,7 @@ func (luc *ldapUserCache) Update() error {
 			sshKeyBytes, _ := base64.StdEncoding.DecodeString(eachKey)
 			userSSHKey, err := ssh.ParsePublicKey(sshKeyBytes)
 			if err != nil {
-				log.Error("SSH key parsing for %s failed! This key will not be added into LDAP.", username)
+				log.Errorf("SSH key parsing for %s failed! This key will not be added into LDAP.", username)
 				continue
 			}
 
@@ -143,10 +143,8 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 		// We should update LDAP cache again to retry keys.
 		luc.Update()
 		return luc._verify(username, challenge, sshSig)
-	} else {
-		return retUser, nil
 	}
-	return nil, nil
+	return retUser, nil
 }
 
 /*

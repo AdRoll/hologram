@@ -40,7 +40,7 @@ func TestSSH(t *testing.T) {
 
 		testBuffer := randomBytes(64)
 		_, err := SSHSign(testBuffer, 0)
-		if err == noKeysError {
+		if err == errNoKeys {
 			t.Skip()
 		}
 
@@ -74,7 +74,7 @@ func TestSSH(t *testing.T) {
 		Convey("If the signature verification fails the first time we should not retry infinitely.", func() {
 			buffer := randomBytes(64)
 			sig, err := SSHSign(buffer, 1)
-			So(err, ShouldEqual, sshKeyError)
+			So(err, ShouldEqual, errSSHKey)
 			So(sig, ShouldBeNil)
 		})
 	})

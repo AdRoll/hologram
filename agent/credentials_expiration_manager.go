@@ -44,15 +44,13 @@ func (m *credentialsExpirationManager) SetClient(client Client) {
 func (m *credentialsExpirationManager) GetCredentials() (*sts.Credentials, error) {
 	if m.creds == nil {
 		return nil, errors.New("No credentials set. Please activate hologram from the CLI first")
-	} else {
-		err := m.maybeRefreshCredentials()
-		if err != nil {
-			return nil, err
-		} else {
-			return m.creds, nil
-		}
 	}
-	return nil, errors.New("this line should never be reached...")
+
+	err := m.maybeRefreshCredentials()
+	if err != nil {
+		return nil, err
+	}
+	return m.creds, nil
 }
 
 func (m *credentialsExpirationManager) maybeRefreshCredentials() error {
@@ -64,10 +62,9 @@ func (m *credentialsExpirationManager) maybeRefreshCredentials() error {
 			// and we used AssumeRole to generate the current creds
 			// then use AssumeRole to refresh 'em
 			return m.client.AssumeRole(m.user, m.role)
-		} else {
-			// go ahead and refresh our creds, just to be safe
-			return m.client.GetUserCredentials()
 		}
+		// go ahead and refresh our creds, just to be safe
+		return m.client.GetUserCredentials()
 	}
 	return nil
 }
