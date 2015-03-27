@@ -18,7 +18,7 @@ Your software interacts with Hologram in the same manner that you would a produc
 ## Pre-requisites
 Hologram requires the following things to already be setup:
 
-* A Go development environment on one workstation, with `$GOPATH` already setup.
+* A Go development environment on one workstation, with `$GOPATH` already setup. A docker container (adroll/hologram_env) is provided that includes all dependencies and support for cross-compiling linux/osx binaries and building deb/osx packages. This container can be launched from the hologram.sh script, so you don't even need to have a working go environment to build and develop on hologram.
 * An LDAP server with `sshPublicKey` attributes on user records to store their SSH public keys.
 * `ssh-agent` running on all workstations using Hologram Agent, configured to load the key you have stored in LDAP for that user.
 * An AWS account that you can administer IAM permissions in.
@@ -26,17 +26,74 @@ Hologram requires the following things to already be setup:
 * Developers using Hologram must be running OS X or Linux machines. The built packages support Debian derivatives. No Windows support is planned, but patches are welcome.
 
 ## Installation
-Hologram currently doesn't ship pre-compiled binaries, so you'll need to build it yourself. This build process has only been tested on OS X Mavericks and OS X Yosemite. Because it compiles binaries for OS X, you probably can't do the building on OS X. It does, however, cross-compile to Linux just fine using gox.
+Hologram currently doesn't ship pre-compiled binaries, so you'll need to build it yourself. A docker container is provided that contains all that's needed to test, compile and build hologram packages for both debian and osx. You just need to invoke the script from the same directory where the hologram source lives. This is a full example of testing and building packages for all supported platforms.
+```
+➞  ./hologram.sh build_all
+    >> Getting package github.com/golang/protobuf/...
+    >> Getting package golang.org/x/crypto/ssh
+    >> Getting package github.com/aybabtme/rgbterm
+    >> Getting package github.com/mitchellh/go-homedir
+    >> Getting package github.com/nmcclain/ldap
+    >> Getting package github.com/peterbourgon/g2s
+    >> Getting package github.com/goamz/goamz/...
+    >> Getting package github.com/smartystreets/goconvey/...
+    >> Setting github.com/golang/protobuf/... to version a8323e2cd7e8ba8596aeb64a2ae304ddcd7dfbc0
+    >> Setting golang.org/x/crypto/ssh to version 88b65fb66346493d43e735adad931bf69dee4297
+    >> Setting github.com/nmcclain/ldap to version f4e67fa4cd924fbe6f271611514caf5589e6a6e5
+    >> Setting github.com/peterbourgon/g2s to version ec76db4c1ac16400ac0e17ca9c4840e1d23da5dc
+    >> Setting github.com/aybabtme/rgbterm to version c07e2f009ed2311e9c35bca12ec00b38ccd48283
+    >> Setting github.com/goamz/goamz/... to version 63291cb652bc024bcd52303631afad8f230b8244
+    >> Setting github.com/smartystreets/goconvey/... to version 1d9daca83fc3cf35d01b9d0ac2debad3453bf178
+    >> Setting github.com/mitchellh/go-homedir to version 7d2d8c8a4e078ce3c58736ab521a40b37a504c52
+    >> Building package github.com/golang/protobuf/...
+    >> Building package golang.org/x/crypto/ssh
+    >> Building package github.com/aybabtme/rgbterm
+    >> Building package github.com/mitchellh/go-homedir
+    >> Building package github.com/nmcclain/ldap
+    >> Building package github.com/peterbourgon/g2s
+    >> Building package github.com/goamz/goamz/...
+    >> Building package github.com/smartystreets/goconvey/...
+    >> All Done
+    Running tests...
+    === RUN TestCliHandler
 
-### Building Packages
-Hologram comes with support for packaging for Debian-based servers. To build these, do the following:
+      AssumeRole ✔✔✔✔
 
-1. `mkdir -p $GOPATH/src/github.com/AdRoll`
-2. `git clone git@github.com:AdRoll/hologram.git $GOPATH/src/github.com/AdRoll/hologram`
-3. `cd $GOPATH/src/github.com/AdRoll/hologram`
-4. `make setup`: This will setup dependencies for building Hologram on your workstation.
-5. Modify the `config/{agent,server}.json` files included for your particular deployment. If you edit these, they will be included in the compiled packages. You may distribute the files in any other way you may wish, but note that they must be in this format, at `/etc/hologram/agent.json` and `/etc/hologram/server.json` respectively.
-6. `make package`: This will build the Hologram programs for OS X and Linux, and build installers for each. You will need to `sudo` during this process.
+
+    4 assertions thus far
+
+    --- PASS: TestCliHandler (0.00s)
+
+    <...>
+
+    === RUN TestSSLWithSelfSignedRootCA
+
+      Given a test server with self-signed SSL certificates ✔
+        When a client connects and pings ✔✔
+          Then it should get a pong response ✔✔
+
+
+    5 assertions thus far
+
+    --- PASS: TestSSLWithSelfSignedRootCA (0.33s)
+    PASS
+    ok      github.com/AdRoll/hologram/transport/remote     0.380s
+    Compiling for linux...
+    Compiling for osx
+    /var/lib/gems/2.1.0/gems/fpm-1.3.3/lib/fpm/util.rb:127: warning: Insecure world writable dir /go/src in PATH, mode 040777
+    Created package {:path=>"/go/src/github.com/AdRoll/hologram/artifacts/hologram-1.1.42~23a3e63.deb"}
+    /var/lib/gems/2.1.0/gems/fpm-1.3.3/lib/fpm/util.rb:127: warning: Insecure world writable dir /go/src in PATH, mode 040777
+    Created package {:path=>"/go/src/github.com/AdRoll/hologram/artifacts/hologram-server-1.1.42~23a3e63.deb"}
+    44009 blocks
+    2 blocks
+    osx package has been built
+```
+
+To access the full development environment, with all the needed dependencies and cross-compiling support just do:
+```
+    $ ./hologram.sh console
+```
+Please note that you'll probably need to update the `config/{agent,server}.json` files included for your particular deployment. If you edit these, they will be included in the compiled packages. You may distribute the files in any other way you may wish, but note that they must be in this format, at `/etc/hologram/agent.json` and `/etc/hologram/server.json` respectively.
 
 ### Deployment
 1. Launch an EC2 instance with an instance profile with permissions detailed in `permissions.json`.

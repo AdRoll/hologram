@@ -2,6 +2,8 @@ build/
 pkg/
 .texpadtmp/
 spec.pdf
+.godeps
+artifacts/
 .deps
 /bin
 deploy/healthcheck

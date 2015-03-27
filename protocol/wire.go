@@ -22,7 +22,7 @@ import (
 	"hash/crc32"
 	"io"
 
-	"code.google.com/p/goprotobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 // Common errors we'll run into.

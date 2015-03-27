@@ -1,2 +1,2 @@
 #!/bin/sh
-service hologram stop
+service hologram-server stop
