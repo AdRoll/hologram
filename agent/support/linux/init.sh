@@ -19,7 +19,8 @@ start)
   printf "%-50s" "Starting $NAME..."
   cd $DAEMON_PATH
   # Make sure that the metadata interface is up.
-  ifconfig lo:metadata 169.254.169.254 up
+  ip addr add 169.254.169.254/24 broadcast 169.254.169.255 dev lo:metadata
+  ip link set dev lo:metadata up
   PID=`$DAEMON $DAEMONOPTS > /var/log/hologram.log 2>&1 & echo $!`
   #echo "Saving PID" $PID " to " $PIDFILE
         if [ -z $PID ]; then

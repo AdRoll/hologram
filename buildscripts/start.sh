@@ -4,8 +4,8 @@ source ${HOLOGRAM_DIR}/buildscripts/returncodes.sh
 
 rsyslogd  # Believe it or not you need syslog to test hologram
 
-if [ "$1" == "build_deb" ]; then
-    build_deb_pkgs.sh || exit $?
+if [ "$1" == "build_linux" ]; then
+    build_linux_pkgs.sh || exit $?
 elif [ "$1" == "build_osx" ]; then
     build_osx_pkgs.sh || exit $?
 elif [ "$1" == "build_all" ]; then
@@ -16,6 +16,6 @@ elif [ "$1" == "console" ]; then
     install_deps.sh || exit $?
     bash
 else
-    echo "Valid options: build_deb, build_osx, build_all, test, console"
+    echo "Valid options: build_linux, build_osx, build_all, test, console"
     exit ${ERRARGS}
 fi

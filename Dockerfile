@@ -9,11 +9,13 @@ RUN cd /usr/src/go/src \
 
 RUN apt-get update && apt-get install -y \
                                 cpio \
+                                file \
                                 gcc \
                                 g++ \
                                 libssl-dev \
                                 libxml2-dev \
                                 make \
+                                rpm \
                                 rsyslog \
                                 ruby \
                                 ruby-dev
