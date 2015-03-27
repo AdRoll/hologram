@@ -46,13 +46,13 @@ func main() {
 	log.Debug("Loading configuration from %s", *configFile)
 	configContents, configErr := ioutil.ReadFile(*configFile)
 	if configErr != nil {
-		log.Error("Could not read from config file. The error was: %s", configErr.Error())
+		log.Errorf("Could not read from config file. The error was: %s", configErr.Error())
 		os.Exit(1)
 	}
 
 	configParseErr := json.Unmarshal(configContents, &config)
 	if configParseErr != nil {
-		log.Error("Error in parsing config file: %s", configParseErr.Error())
+		log.Errorf("Error in parsing config file: %s", configParseErr.Error())
 		os.Exit(1)
 	}
 
@@ -78,7 +78,7 @@ func main() {
 		Port: 80,
 	})
 	if err != nil {
-		log.Error("Could not startup the metadata interface: %s", err)
+		log.Errorf("Could not startup the metadata interface: %s", err)
 		os.Exit(1)
 	}
 
@@ -86,7 +86,7 @@ func main() {
 
 	mds, metadataError := agent.NewMetadataService(listener, credsManager)
 	if metadataError != nil {
-		log.Error("Could not create metadata service: %s", metadataError.Error())
+		log.Errorf("Could not create metadata service: %s", metadataError.Error())
 		os.Exit(1)
 	}
 	mds.Start()
@@ -97,7 +97,7 @@ func main() {
 	agentServer := agent.NewCliHandler("/var/run/hologram.sock", client)
 	err = agentServer.Start()
 	if err != nil {
-		log.Error("Could not start agentServer: %s", err.Error())
+		log.Errorf("Could not start agentServer: %s", err.Error())
 		os.Exit(1)
 	}
 

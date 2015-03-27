@@ -125,14 +125,14 @@ func (c *client) requestCredentials(req *protocol.ServerRequest, user string, ro
 				return nil
 			} else if serverResponse.GetVerificationFailure() != nil {
 				// try the next key
-				skip += 1
+				skip++
 			} else {
-				return errors.New(fmt.Sprintf("unexpected message from server: %v", msg))
+				return fmt.Errorf("unexpected message from server: %v", msg)
 			}
 		} else if msg.GetError() != "" {
 			return errors.New(msg.GetError())
 		} else {
-			return errors.New(fmt.Sprintf("unexpected message from server: %v", msg))
+			return fmt.Errorf("unexpected message from server: %v", msg)
 		}
 	}
 }

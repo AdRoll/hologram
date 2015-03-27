@@ -61,13 +61,13 @@ func main() {
 	log.Debug("Loading configuration from %s", *configFile)
 	configContents, configErr := ioutil.ReadFile(*configFile)
 	if configErr != nil {
-		log.Error("Could not read from config file. The error was: %s", configErr.Error())
+		log.Errorf("Could not read from config file. The error was: %s", configErr.Error())
 		os.Exit(1)
 	}
 
 	configParseErr := json.Unmarshal(configContents, &config)
 	if configParseErr != nil {
-		log.Error("Error in parsing config file: %s", configParseErr.Error())
+		log.Errorf("Error in parsing config file: %s", configParseErr.Error())
 		os.Exit(1)
 	}
 
@@ -113,7 +113,7 @@ func main() {
 	} else {
 		stats, statsErr = g2s.Dial("udp", config.Stats)
 		if statsErr != nil {
-			log.Error("Error connecting to statsd: %s. No metrics will be emitted by this program.", statsErr.Error())
+			log.Errorf("Error connecting to statsd: %s. No metrics will be emitted by this program.", statsErr.Error())
 			stats = g2s.Noop()
 		} else {
 			log.Debug("This program will emit metrics to %s", config.Stats)
@@ -123,7 +123,7 @@ func main() {
 	// Setup the server state machine that responds to requests.
 	auth, err := aws.GetAuth("", "", "", time.Now())
 	if err != nil {
-		log.Error("Error getting instance credentials: %s", err.Error())
+		log.Errorf("Error getting instance credentials: %s", err.Error())
 		os.Exit(1)
 	}
 
@@ -137,7 +137,7 @@ func main() {
 		log.Debug("Connecting to LDAP at server %s (NOT using TLS).", config.LDAP.Host)
 		ldapServer, err = ldap.Dial("tcp", config.LDAP.Host)
 		if err != nil {
-			log.Error("Could not dial LDAP! %s", err.Error())
+			log.Errorf("Could not dial LDAP! %s", err.Error())
 			os.Exit(1)
 		}
 	} else {
@@ -149,19 +149,19 @@ func main() {
 		log.Debug("Connecting to LDAP at server %s.", config.LDAP.Host)
 		ldapServer, err = ldap.DialTLS("tcp", config.LDAP.Host, tlsConfig)
 		if err != nil {
-			log.Error("Could not dial LDAP! %s", err.Error())
+			log.Errorf("Could not dial LDAP! %s", err.Error())
 			os.Exit(1)
 		}
 	}
 
 	if bindErr := ldapServer.Bind(config.LDAP.Bind.DN, config.LDAP.Bind.Password); bindErr != nil {
-		log.Error("Could not bind to LDAP! %s", bindErr.Error())
+		log.Errorf("Could not bind to LDAP! %s", bindErr.Error())
 		os.Exit(1)
 	}
 
 	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.BaseDN)
 	if err != nil {
-		log.Error("Top-level error in LDAPUserCache layer: %s", err.Error())
+		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
 		os.Exit(1)
 	}
 

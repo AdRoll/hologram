@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
@@ -37,20 +38,35 @@ func getAgentSSHKey() string {
 	return base64.StdEncoding.EncodeToString(keys[0].Marshal())
 }
 
+func loadPubKey(file string, path string) (string, error) {
+	filePath := filepath.Join(path, file)
+
+	sshKeyBytes, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return "", err
+	}
+	k, _, _, _, err := ssh.ParseAuthorizedKey(sshKeyBytes)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(k.Marshal()), nil
+}
+
 func getUserHomeDirSSHKey() string {
-	if sshDir, homeErr := homedir.Expand("~/.ssh"); homeErr == nil {
-		sshFilename := fmt.Sprintf("%s/id_rsa.pub", sshDir)
-		if sshKeyBytes, keyReadErr := ioutil.ReadFile(sshFilename); keyReadErr == nil {
-			k, _, _, _, _ := ssh.ParseAuthorizedKey(sshKeyBytes)
-			return base64.StdEncoding.EncodeToString(k.Marshal())
-		} else {
-			// Fallback on a user's DSA key if they have one.
-			sshFilename := fmt.Sprintf("%s/id_dsa.pub", sshDir)
-			if sshKeyBytes, keyReadErr := ioutil.ReadFile(sshFilename); keyReadErr == nil {
-				k, _, _, _, _ := ssh.ParseAuthorizedKey(sshKeyBytes)
-				return base64.StdEncoding.EncodeToString(k.Marshal())
-			}
+	sshDir, homeErr := homedir.Expand("~/.ssh")
+	if homeErr != nil {
+		return ""
+	}
+
+	// Go in order through the list until we find one key we can use
+	listFiles := []string{"id_rsa.pub", "id_dsa.pub"}
+	for _, file := range listFiles {
+		key, err := loadPubKey(file, sshDir)
+		if err != nil {
+			// TODO: Probably log it?
+			continue
 		}
+		return key
 	}
 
 	return ""

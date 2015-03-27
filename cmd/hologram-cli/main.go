@@ -15,7 +15,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -57,7 +56,7 @@ func main() {
 	}
 
 	if err != nil {
-		log.Error(err.Error())
+		log.Errorf(err.Error())
 		os.Exit(1)
 	}
 }
@@ -79,7 +78,7 @@ func use(role string) error {
 	}
 
 	if response.GetFailure() != nil {
-		return errors.New(fmt.Sprintf(response.GetFailure().GetErrorMessage()))
+		return fmt.Errorf(response.GetFailure().GetErrorMessage())
 	}
 
 	if response.GetSuccess() != nil {
@@ -88,7 +87,7 @@ func use(role string) error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Unexpected response type: %v", response))
+	return fmt.Errorf("Unexpected response type: %v", response)
 }
 
 func me() error {
@@ -101,7 +100,7 @@ func me() error {
 	}
 
 	if response.GetFailure() != nil {
-		return errors.New(fmt.Sprintf("Error from server: %s", response.GetFailure().GetErrorMessage()))
+		return fmt.Errorf("Error from server: %s", response.GetFailure().GetErrorMessage())
 	}
 
 	if response.GetSuccess() != nil {
@@ -109,7 +108,7 @@ func me() error {
 		return nil
 	}
 
-	return errors.New(fmt.Sprintf("Unexpected response type: %v", response))
+	return fmt.Errorf("Unexpected response type: %v", response)
 }
 
 func request(req *protocol.AgentRequest) (*protocol.AgentResponse, error) {
@@ -152,7 +151,7 @@ func request(req *protocol.AgentRequest) (*protocol.AgentResponse, error) {
 	response, err := client.Read()
 
 	if response.GetAgentResponse() == nil {
-		return nil, errors.New(fmt.Sprintf("Unexpected response type: %v", response))
+		return nil, fmt.Errorf("Unexpected response type: %v", response)
 	}
 
 	return response.GetAgentResponse(), nil

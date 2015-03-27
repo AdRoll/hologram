@@ -27,9 +27,9 @@ var (
 	// Not sure if this needs a mutex around it. Probably not, because it only gets written once by one thing.
 	socketAddress  string
 	successfulKey  *agent.Key
-	providedSshKey ssh.Signer
-	noKeysError    = errors.New("No keys available in ssh-agent")
-	sshKeyError    = errors.New("Could not use the provided SSH key.")
+	providedSSHKey ssh.Signer
+	errNoKeys      = errors.New("No keys available in ssh-agent")
+	errSSHKey      = errors.New("Could not use the provided SSH key.")
 )
 
 func SSHSetAgentSock(socketAddressFromCli string, sshKeyFromCli []byte) {
@@ -38,9 +38,9 @@ func SSHSetAgentSock(socketAddressFromCli string, sshKeyFromCli []byte) {
 	if sshKeyFromCli != nil {
 		sshKey, keyErr := ssh.ParsePrivateKey(sshKeyFromCli)
 		if keyErr != nil {
-			log.Error("Could not parse SSH key given by the CLI.")
+			log.Errorf("Could not parse SSH key given by the CLI.")
 		} else {
-			providedSshKey = sshKey
+			providedSSHKey = sshKey
 		}
 	}
 }
@@ -53,14 +53,14 @@ func SSHSign(challenge []byte, skip int) (*ssh.Signature, error) {
 	if socketAddress == "" {
 		// Do not infinitely loop trying to use our provided SSH key.
 		if skip > 0 {
-			return nil, sshKeyError
+			return nil, errSSHKey
 		}
 
 		log.Debug("Falling back on provided SSH key.")
-		if providedSshKey == nil {
-			return nil, sshKeyError
+		if providedSSHKey == nil {
+			return nil, errSSHKey
 		}
-		signer = providedSshKey
+		signer = providedSSHKey
 	} else {
 		c, err := net.Dial("unix", socketAddress)
 		if err != nil {
@@ -74,7 +74,7 @@ func SSHSign(challenge []byte, skip int) (*ssh.Signature, error) {
 		}
 
 		if len(keys) == 0 {
-			return nil, noKeysError
+			return nil, errNoKeys
 		}
 
 		if skip >= len(keys) {

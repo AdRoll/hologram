@@ -69,11 +69,9 @@ func (mds *metadataService) listen() {
 		if strings.HasSuffix(err.Error(), "use of closed network connection") {
 			// this happens when Close() is called, and it's normal
 			return
-		} else {
-			panic(err)
 		}
+		panic(err)
 	}
-
 }
 
 /*

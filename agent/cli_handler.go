@@ -76,7 +76,7 @@ func (h *cliHandler) HandleConnection(c protocol.MessageReadWriteCloser) {
 				if err == nil {
 					agentResponse.Success = &protocol.Success{}
 				} else {
-					log.Error(err.Error())
+					log.Errorf(err.Error())
 					e := err.Error()
 					agentResponse.Failure = &protocol.Failure{
 						ErrorMessage: &e,
@@ -97,7 +97,7 @@ func (h *cliHandler) HandleConnection(c protocol.MessageReadWriteCloser) {
 				if err == nil {
 					agentResponse.Success = &protocol.Success{}
 				} else {
-					log.Error(err.Error())
+					log.Errorf(err.Error())
 					e := err.Error()
 					agentResponse.Failure = &protocol.Failure{
 						ErrorMessage: &e,
@@ -111,12 +111,12 @@ func (h *cliHandler) HandleConnection(c protocol.MessageReadWriteCloser) {
 					return
 				}
 			} else {
-				log.Error("Unexpected agent request: %s", dr)
+				log.Errorf("Unexpected agent request: %s", dr)
 				c.Close()
 				return
 			}
 		} else {
-			log.Error("Unexpected message: %s", msg)
+			log.Errorf("Unexpected message: %s", msg)
 			c.Close()
 			return
 		}
