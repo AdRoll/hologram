@@ -19,6 +19,7 @@ type Config struct {
 			DN       string `json:"dn"`
 			Password string `json:"password"`
 		} `json:"bind"`
+		UserAttr     string `json:"userattr"`
 		BaseDN       string `json:"basedn"`
 		Host         string `json:"host"`
 		InsecureLDAP bool   `json:"insecureldap"`

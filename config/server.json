@@ -5,6 +5,7 @@
       "dn":       "",
       "password": ""
     },
+    "userattr": "cn",
     "basedn": ""
   },
   "aws": {
