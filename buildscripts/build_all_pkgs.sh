@@ -1,5 +1,7 @@
 #!/bin/bash
 
-compile_hologram.sh --deps || exit 1
-build_deb_pkgs.sh --no-compile || exit 1
-build_osx_pkgs.sh --no-compile || exit 1
+# Compile hologram and build packages for all supported platforms
+
+compile_hologram.sh --deps || exit $?
+build_deb_pkgs.sh --no-compile || exit $?
+build_osx_pkgs.sh --no-compile || exit $?
