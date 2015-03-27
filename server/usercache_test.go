@@ -63,8 +63,7 @@ StubLDAPServer exists to test Hologram's LDAP integration without
 requiring an actual LDAP server.
 */
 type StubLDAPServer struct {
-	Key  string
-	Key2 string
+	Keys []string
 }
 
 func (sls *StubLDAPServer) Search(s *ldap.SearchRequest) (*ldap.SearchResult, error) {
@@ -78,7 +77,7 @@ func (sls *StubLDAPServer) Search(s *ldap.SearchRequest) (*ldap.SearchResult, er
 					},
 					&ldap.EntryAttribute{
 						Name:   "sshPublicKey",
-						Values: []string{sls.Key, sls.Key2},
+						Values: sls.Keys,
 					},
 				},
 			},
@@ -122,12 +121,11 @@ func TestLDAPUserCache(t *testing.T) {
 		keyValue := base64.StdEncoding.EncodeToString(keys[0].Blob)
 
 		// Load in an additional key from the test data.
-		privateKey, _ := ssh.ParsePrivateKey(testKey)
-		testPublicKey := base64.StdEncoding.EncodeToString(privateKey.PublicKey().Marshal())
+		privateKey, _     := ssh.ParsePrivateKey(testKey)
+		testPublicKey     := base64.StdEncoding.EncodeToString(privateKey.PublicKey().Marshal())
 
 		s := &StubLDAPServer{
-			Key:  keyValue,
-			Key2: testPublicKey,
+			Keys: []string{keyValue, testPublicKey},
 		}
 		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com")
 		So(err, ShouldBeNil)
@@ -155,13 +153,13 @@ func TestLDAPUserCache(t *testing.T) {
 
 		Convey("When a user is requested that cannot be found in the cache", func() {
 			// Use an SSH key we're guaranteed to not have.
-			oldKey := s.Key
-			s.Key = testPublicKey
+			oldKey := s.Keys[0]
+			s.Keys[0] = testPublicKey
 			lc.Update()
 
 			// Swap the key back and try verifying.
 			// We should still get a result back.
-			s.Key = oldKey
+			s.Keys[0] = oldKey
 			success := false
 
 			for i := 0; i < len(keys); i++ {
@@ -198,5 +196,25 @@ func TestLDAPUserCache(t *testing.T) {
 			})
 		})
 
+
+		testAuthorizedKey := string(ssh.MarshalAuthorizedKey(privateKey.PublicKey()))
+
+		s = &StubLDAPServer{
+			Keys: []string{testAuthorizedKey},
+		}
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com")
+		So(err, ShouldBeNil)
+		So(lc, ShouldNotBeNil)
+
+		Convey("The usercache should understand the SSH authorized_keys format", func() {
+			challenge := randomBytes(64)
+			sig, err := privateKey.Sign(cryptrand.Reader, challenge)
+			if err != nil {
+				t.Fatal(err)
+			}
+			verifiedUser, err := lc.Authenticate("ericallen", challenge, sig)
+			So(verifiedUser, ShouldNotBeNil)
+			So(err, ShouldBeNil)
+		})
 	})
 }

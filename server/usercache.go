@@ -91,8 +91,11 @@ func (luc *ldapUserCache) Update() error {
 			sshKeyBytes, _ := base64.StdEncoding.DecodeString(eachKey)
 			userSSHKey, err := ssh.ParsePublicKey(sshKeyBytes)
 			if err != nil {
-				log.Errorf("SSH key parsing for %s failed! This key will not be added into LDAP.", username)
-				continue
+				userSSHKey, _, _, _, err = ssh.ParseAuthorizedKey([]byte(eachKey))
+				if err != nil {
+					log.Warning("SSH key parsing for user %s failed (key was '%s')! This key will not be added into LDAP.", username, eachKey)
+					continue
+				}
 			}
 
 			userKeys = append(userKeys, userSSHKey)
