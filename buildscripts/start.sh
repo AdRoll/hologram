@@ -11,7 +11,7 @@ elif [ "$1" == "build_osx" ]; then
 elif [ "$1" == "build_all" ]; then
     build_all_pkgs.sh || exit $?
 elif [ "$1" == "test" ]; then
-    compile_hologram.sh || exit $?
+    compile_hologram.sh --deps || exit $?
 elif [ "$1" == "console" ]; then
     install_deps.sh || exit $?
     bash
