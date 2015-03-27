@@ -1,5 +1,5 @@
 #!/bin/bash
-# Hologram agent for Ubuntu machines.
+# Hologram agent for Linux machines.
 # chkconfig: 345 20 80
 # description: Hologram agent.
 # processname: hologram-agent
