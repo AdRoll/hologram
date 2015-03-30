@@ -145,13 +145,11 @@ func TestServerStateMachine(t *testing.T) {
 		})
 
 		Convey("After an AssumeRequest", func() {
-			username := "testuser"
 			role := "testrole"
 
 			msg := &protocol.Message{
 				ServerRequest: &protocol.ServerRequest{
 					AssumeRole: &protocol.AssumeRole{
-						User: &username,
 						Role: &role,
 					},
 				},

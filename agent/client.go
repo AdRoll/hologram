@@ -24,12 +24,12 @@ import (
 )
 
 type CredentialsReceiver interface {
-	SetCredentials(*sts.Credentials, string, string)
+	SetCredentials(*sts.Credentials, string)
 	SetClient(Client)
 }
 
 type Client interface {
-	AssumeRole(user string, role string) error
+	AssumeRole(role string) error
 	GetUserCredentials() error
 }
 
@@ -49,15 +49,14 @@ func NewClient(connectionString string, cr CredentialsReceiver) *client {
 	return c
 }
 
-func (c *client) AssumeRole(user string, role string) error {
+func (c *client) AssumeRole(role string) error {
 	req := &protocol.ServerRequest{
 		AssumeRole: &protocol.AssumeRole{
-			User: &user,
 			Role: &role,
 		},
 	}
 
-	return c.requestCredentials(req, user, role)
+	return c.requestCredentials(req, role)
 }
 
 func (c *client) GetUserCredentials() error {
@@ -65,10 +64,10 @@ func (c *client) GetUserCredentials() error {
 		GetUserCredentials: &protocol.GetUserCredentials{},
 	}
 
-	return c.requestCredentials(req, "", "")
+	return c.requestCredentials(req, "")
 }
 
-func (c *client) requestCredentials(req *protocol.ServerRequest, user string, role string) error {
+func (c *client) requestCredentials(req *protocol.ServerRequest, role string) error {
 	conn, err := remote.NewClient(c.connectionString)
 	if err != nil {
 		return err
@@ -121,7 +120,7 @@ func (c *client) requestCredentials(req *protocol.ServerRequest, user string, ro
 					SecretAccessKey: credsResponse.GetSecretAccessKey(),
 					Expiration:      time.Unix(credsResponse.GetExpiration(), 0),
 				}
-				c.cr.SetCredentials(creds, user, role)
+				c.cr.SetCredentials(creds, role)
 				return nil
 			} else if serverResponse.GetVerificationFailure() != nil {
 				// try the next key

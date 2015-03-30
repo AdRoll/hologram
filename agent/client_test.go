@@ -33,7 +33,7 @@ type dummyCredentialsReceiver struct {
 	creds *sts.Credentials
 }
 
-func (r *dummyCredentialsReceiver) SetCredentials(creds *sts.Credentials, user string, role string) {
+func (r *dummyCredentialsReceiver) SetCredentials(creds *sts.Credentials, role string) {
 	r.creds = creds
 }
 
@@ -58,7 +58,7 @@ func TestAssumeRole(t *testing.T) {
 			server.Close()
 		})
 
-		err = c.AssumeRole("test_user", "test_role")
+		err = c.AssumeRole("test_role")
 
 		So(err, ShouldBeNil)
 		So(credentialsReceiver.creds, ShouldNotBeNil)
