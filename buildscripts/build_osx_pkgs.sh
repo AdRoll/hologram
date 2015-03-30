@@ -19,6 +19,7 @@ install -m 0755 ${BIN_DIR}/darwin_amd64/hologram{-agent,,-authorize,-boot} /holo
 install -m 0644 ${HOLOGRAM_DIR}/config/agent.json /hologram-build/darwin/root/etc/hologram/agent.json
 install -m 0644 ${HOLOGRAM_DIR}/agent/support/darwin/com.adroll.hologram{-ip,-me,}.plist /hologram-build/darwin/root/Library/LaunchDaemons/
 install -m 0755 ${HOLOGRAM_DIR}/agent/support/darwin/postinstall.sh /hologram-build/darwin/scripts/postinstall
+install -m 0755 ${HOLOGRAM_DIR}/agent/support/darwin/preinstall.sh /hologram-build/darwin/scripts/preinstall
 
 NUM_FILES=$(find /hologram-build/darwin/root | wc -l)
 INSTALL_KB_SIZE=$(du -k -s /hologram-build/darwin/root | awk '{print $1}')
@@ -34,13 +35,16 @@ cat <<EOF > /hologram-build/darwin/flat/base.pkg/PackageInfo
     <strict-identifier/>
     <relocate/>
     <scripts>
+        <preinstall file="./preinstall"/>
         <postinstall file="./postinstall"/>
     </scripts>
 </pkg-info>
 EOF
 
+PKG_LOCATION="artifacts/Hologram-${GIT_TAG}.pkg"
+
 ( cd /hologram-build/darwin/root && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > /hologram-build/darwin/flat/base.pkg/Payload
 ( cd /hologram-build/darwin/scripts && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > /hologram-build/darwin/flat/base.pkg/Scripts
 mkbom -u 0 -g 80 /hologram-build/darwin/root /hologram-build/darwin/flat/base.pkg/Bom || exit ${ERROSXPKG}
-( cd /hologram-build/darwin/flat/base.pkg && /usr/local/bin/xar --compression none -cf "${HOLOGRAM_DIR}/artifacts/Hologram-${GIT_TAG}.pkg" * ) || exit ${ERROSXPKG}
-echo "osx package has been built"
+( cd /hologram-build/darwin/flat/base.pkg && /usr/local/bin/xar --compression none -cf "${HOLOGRAM_DIR}/${PKG_LOCATION}" * ) || exit ${ERROSXPKG}
+echo "osx package has been built: ${PKG_LOCATION}"
