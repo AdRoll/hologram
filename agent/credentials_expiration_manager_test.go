@@ -26,7 +26,7 @@ type dummyClient2 struct {
 	getUserCredentialsCount int
 }
 
-func (d *dummyClient2) AssumeRole(user string, role string) error {
+func (d *dummyClient2) AssumeRole(role string) error {
 	d.assumeRoleCount++
 	return nil
 }
@@ -47,7 +47,7 @@ func TestCredentialsExpirationManager(t *testing.T) {
 			creds := sts.Credentials{
 				AccessKeyId: "derp",
 			}
-			credsManager.SetCredentials(&creds, "", "")
+			credsManager.SetCredentials(&creds, "")
 
 			retrievedCreds, err := credsManager.GetCredentials()
 			So(err, ShouldBeNil)
@@ -59,7 +59,7 @@ func TestCredentialsExpirationManager(t *testing.T) {
 				AccessKeyId: "derp",
 				Expiration:  time.Now().Add(-time.Duration(1 * time.Hour)),
 			}
-			credsManager.SetCredentials(&creds, "", "")
+			credsManager.SetCredentials(&creds, "")
 
 			_, err := credsManager.GetCredentials()
 			So(err, ShouldBeNil)
@@ -71,7 +71,7 @@ func TestCredentialsExpirationManager(t *testing.T) {
 				AccessKeyId: "derp",
 				Expiration:  time.Now().Add(-time.Duration(5 * time.Minute)),
 			}
-			credsManager.SetCredentials(&creds, "user", "role")
+			credsManager.SetCredentials(&creds, "role")
 
 			_, err := credsManager.GetCredentials()
 			So(err, ShouldBeNil)

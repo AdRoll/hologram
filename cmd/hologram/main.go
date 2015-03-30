@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/user"
 
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
@@ -62,14 +61,8 @@ func main() {
 }
 
 func use(role string) error {
-	u, err := user.Current()
-	if err != nil {
-		return err
-	}
-
 	response, err := request(&protocol.AgentRequest{
 		AssumeRole: &protocol.AssumeRole{
-			User: &u.Username,
 			Role: &role,
 		},
 	})

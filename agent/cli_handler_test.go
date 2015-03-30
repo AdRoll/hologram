@@ -25,7 +25,7 @@ type dummyClient struct {
 	callCount int
 }
 
-func (c *dummyClient) AssumeRole(user string, role string) error {
+func (c *dummyClient) AssumeRole(role string) error {
 	c.callCount++
 	return nil
 }
@@ -42,12 +42,10 @@ func TestCliHandler(t *testing.T) {
 
 		conn := testConnection(ch.HandleConnection)
 
-		user := "user"
 		role := "role"
 		req := &protocol.Message{
 			AgentRequest: &protocol.AgentRequest{
 				AssumeRole: &protocol.AssumeRole{
-					User: &user,
 					Role: &role,
 				},
 			},

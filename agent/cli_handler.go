@@ -70,7 +70,7 @@ func (h *cliHandler) HandleConnection(c protocol.MessageReadWriteCloser) {
 				log.Debug("Handling AssumeRole request.")
 				assumeRole := dr.GetAssumeRole()
 
-				err := h.client.AssumeRole(assumeRole.GetUser(), assumeRole.GetRole())
+				err := h.client.AssumeRole(assumeRole.GetRole())
 
 				var agentResponse protocol.AgentResponse
 				if err == nil {

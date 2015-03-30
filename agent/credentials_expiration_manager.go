@@ -31,9 +31,8 @@ func NewCredentialsExpirationManager() *credentialsExpirationManager {
 	return &credentialsExpirationManager{}
 }
 
-func (m *credentialsExpirationManager) SetCredentials(newCreds *sts.Credentials, user string, role string) {
+func (m *credentialsExpirationManager) SetCredentials(newCreds *sts.Credentials, role string) {
 	m.creds = newCreds
-	m.user = user
 	m.role = role
 }
 
@@ -61,7 +60,7 @@ func (m *credentialsExpirationManager) maybeRefreshCredentials() error {
 		if m.role != "" {
 			// and we used AssumeRole to generate the current creds
 			// then use AssumeRole to refresh 'em
-			return m.client.AssumeRole(m.user, m.role)
+			return m.client.AssumeRole(m.role)
 		}
 		// go ahead and refresh our creds, just to be safe
 		return m.client.GetUserCredentials()
