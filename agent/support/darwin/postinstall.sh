@@ -2,6 +2,12 @@
 # Remove the previous version of Hologram.
 launchctl unload -w /Library/LaunchDaemons/com.adroll.hologram.plist
 
+# Copy our previous config file over the new one
+if [ -f "/etc/hologram/agent.json.save" ]; then
+    mv /etc/hologram/agent.json /etc/hologram/agent.json.pkgnew
+    mv /etc/hologram/agent.json.save /etc/hologram/agent.json
+fi
+
 launchctl load -w /Library/LaunchDaemons/com.adroll.hologram-ip.plist
 launchctl load -w /Library/LaunchDaemons/com.adroll.hologram.plist
 launchctl load -w /Library/LaunchAgents/com.adroll.hologram-me.plist
