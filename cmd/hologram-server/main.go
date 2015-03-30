@@ -125,7 +125,7 @@ func main() {
 	}
 
 	// Setup the server state machine that responds to requests.
-	auth, err := aws.GetAuth("", "", "", time.Now())
+	auth, err := aws.GetAuth(os.Getenv("HOLOGRAM_AWSKEY"), os.Getenv("HOLOGRAM_AWSSECRET"), "", time.Now())
 	if err != nil {
 		log.Errorf("Error getting instance credentials: %s", err.Error())
 		os.Exit(1)
