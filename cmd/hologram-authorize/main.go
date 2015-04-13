@@ -13,6 +13,7 @@ import (
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
 	"github.com/mitchellh/go-homedir"
+	"github.com/howeyc/gopass"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 )
@@ -85,7 +86,9 @@ func main() {
 	var (
 		user     string
 		password string
+	 	passwordBytes []byte
 		sshKey   string
+
 	)
 
 	sshKey = getAgentSSHKey()
@@ -108,7 +111,8 @@ func main() {
 	password = os.Getenv("LDAP_PASSWORD")
 	if password == "" {
 		fmt.Printf("LDAP Password: ")
-		fmt.Scanf("%s", &password)
+		passwordBytes = gopass.GetPasswdMasked()
+		password = string(passwordBytes[:len(passwordBytes)])
 	}
 
 	// Hash the password so we don't send it in the clear.

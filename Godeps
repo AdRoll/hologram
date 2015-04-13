@@ -6,3 +6,4 @@ github.com/nmcclain/ldap f4e67fa4cd924fbe6f271611514caf5589e6a6e5
 github.com/peterbourgon/g2s ec76db4c1ac16400ac0e17ca9c4840e1d23da5dc
 github.com/goamz/goamz/... 63291cb652bc024bcd52303631afad8f230b8244
 github.com/smartystreets/goconvey/... 1d9daca83fc3cf35d01b9d0ac2debad3453bf178
+github.com/howeyc/gopass 2c70fa70727c953c51695f800f25d6b44abb368e
