@@ -25,6 +25,12 @@ Hologram requires the following things to already be setup:
 * A "developer" IAM role or something similar that has the minimum permissions that you want your developers to have by default.
 * Developers using Hologram must be running OS X or Linux machines. The built packages support Debian derivatives. No Windows support is planned, but patches are welcome.
 
+### docker
+
+The hologram build script expects a working docker installation on the local host.
+
+If you're building hologram on OS X, you'll need to use Boot2Docker to run Docker inside of VirtualBox, because Linux. Follow the instructions at https://docs.docker.com/installation/mac/.
+
 ## Installation
 Hologram currently doesn't ship pre-compiled binaries, so you'll need to build it yourself. A docker container is provided that contains all that's needed to test, compile and build hologram packages for both debian and osx. You just need to invoke the script from the same directory where the hologram source lives. This is a full example of testing and building packages for all supported platforms.
 ```
