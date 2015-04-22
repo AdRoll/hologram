@@ -181,7 +181,7 @@ func main() {
 	debugEnable := make(chan os.Signal)
 	debugDisable := make(chan os.Signal)
 	signal.Notify(debugEnable, syscall.SIGUSR1)
-	signal.Notify(debugEnable, syscall.SIGUSR2)
+	signal.Notify(debugDisable, syscall.SIGUSR2)
 
 	// SIGHUP should make Hologram server reload its cache of user information
 	// from LDAP.
