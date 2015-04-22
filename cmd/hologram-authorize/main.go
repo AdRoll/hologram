@@ -25,8 +25,8 @@ import (
 
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
-	"github.com/mitchellh/go-homedir"
 	"github.com/howeyc/gopass"
+	"github.com/mitchellh/go-homedir"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 )
@@ -86,22 +86,38 @@ func getUserHomeDirSSHKey() string {
 	return ""
 }
 
-func main() {
+func loadConfig() (Config, error) {
 	// Figure out which Hologram server we need.
 	configContents, _ := ioutil.ReadFile("/etc/hologram/agent.json")
 	var config Config
 
 	json.Unmarshal(configContents, &config)
+	if config.Host == "" || config.Host == "" {
+		return config, fmt.Errorf("hologram server (host) is not set")
+	}
+	return config, nil
+}
 
-	c, _ := remote.NewClient(config.Host)
+func main() {
+	config, err := loadConfig()
+	if err != nil {
+		fmt.Printf("Error loading /etc/hologram/agent.json: %s\n", err)
+		os.Exit(1)
+	}
+
+	c, err := remote.NewClient(config.Host)
+
+	if err != nil {
+		fmt.Printf("Error connectiong to Hologram server: %s\n", err)
+		os.Exit(2)
+	}
 
 	// Prompt the user for their username and password.
 	var (
-		user     string
-		password string
-	 	passwordBytes []byte
-		sshKey   string
-
+		user          string
+		password      string
+		passwordBytes []byte
+		sshKey        string
 	)
 
 	sshKey = getAgentSSHKey()
