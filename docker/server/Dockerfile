@@ -1,4 +1,4 @@
-FROM debian
+FROM debian:8.0
 
 RUN apt-get update && apt-get install rsyslog ca-certificates -y
 COPY objects/hologram-server.deb /tmp/hologram-server.deb
