@@ -105,6 +105,14 @@ Please note that you'll probably need to update the `config/{agent,server}.json`
 1. Launch an EC2 instance with an instance profile with permissions detailed in `permissions.json`.
 2. Deploy the built `hologram-server.deb` to the server you just launched.
 
+### Deployment using Docker
+You can build and deploy hologram using a docker container. Assuming you have already build a .deb package of hologram-server you want to deploy and that you have also a server.json config file you can use this is what you need to do:
+```
+cd docker/server
+./build-container.sh ../../artifacts/hologram-server-1.1.83\~da8984f.deb ~/server.json my.docker.registry.example.com:5000/hologram_server staging_version # Usage is ./build-container.sh HOLOGRAM_PKG HOLOGRAM_CFG CONTAINER_NAME CONTAINER_TAG
+```
+And it will build a ready_to_use container that can be pushed to your favourite private docker registry.
+
 ### Rollout to Developers
 1. Import each developer's SSH key into LDAP. Hologram will search for their key in the `sshPublicKey` attribute.
 2. Install the `hologram-agent.pkg` installer you built before on each developer's workstation.
