@@ -9,7 +9,8 @@ fi
 
 CONTAINER_TAG=$(git describe --tags --long)
 cp ../../artifacts/hologram-server-${CONTAINER_TAG}.deb objects/hologram-server.deb
-CONTAINER_NAME=$1/hologram_server
+REGISTRY=$1
+CONTAINER_NAME=${REGISTRY}/hologram_server
 
 docker build -t ${CONTAINER_NAME}:${CONTAINER_TAG} .
 docker tag ${CONTAINER_NAME}:${CONTAINER_TAG} ${CONTAINER_NAME}:latest
