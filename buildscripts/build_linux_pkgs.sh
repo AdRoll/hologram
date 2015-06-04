@@ -1,7 +1,7 @@
 #!/bin/bash
 
 source ${HOLOGRAM_DIR}/buildscripts/returncodes.sh
-cd ${HOLOGRAM_DIR} && export GIT_TAG=$(git describe --tags --long | sed 's/-/\./' | sed 's/-g/-/' | sed 's/-/~/')
+cd ${HOLOGRAM_DIR} && export GIT_TAG=$(git describe --tags --long)
 
 if [ "$1" != "--no-compile" ]; then
     compile_hologram.sh || exit $?

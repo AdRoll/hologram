@@ -116,7 +116,7 @@ For each new hologram release an updated image will be pushed to https://registr
 If you're hacking on hologram and want to create your own base image, you can build it yourself. Assuming you have already built a .deb package of hologram-server you want to deploy and that you have also a server.json config file you can use this is what you need to do:
 ```
 cd docker/server
-./build-container.sh ../../artifacts/hologram-server-1.1.83\~da8984f.deb my.docker.registry.example.com:5000/hologram_server staging_version # Usage is ./build-container.sh HOLOGRAM_PKG CONTAINER_NAME CONTAINER_TAG
+./build-container.sh my.docker.registry.example.com:5000 # Usage is ./build-container.sh CONTAINER_NAME
 ```
 And it will build a base container that can be pushed to your favourite private docker registry, just add the config file and you're good to go!
 
