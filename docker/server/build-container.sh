@@ -13,7 +13,7 @@ REGISTRY=$1
 CONTAINER_NAME=${REGISTRY}/hologram_server
 
 docker build -t ${CONTAINER_NAME}:${CONTAINER_TAG} .
-docker tag ${CONTAINER_NAME}:${CONTAINER_TAG} ${CONTAINER_NAME}:latest
+docker tag -f ${CONTAINER_NAME}:${CONTAINER_TAG} ${CONTAINER_NAME}:latest
 
 echo "* To push your container:"
 echo "docker push ${CONTAINER_NAME}:${CONTAINER_TAG}"
