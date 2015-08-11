@@ -8,7 +8,7 @@
   <true/>
   <key>ProgramArguments</key>
   <array>
-    <string>/usr/bin/hologram-agent</string>
+    <string>/usr/local/bin/hologram-agent</string>
   </array>
   <key>StandardOutPath</key>
   <string>/var/log/hologram.log</string>
