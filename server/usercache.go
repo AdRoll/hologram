@@ -29,6 +29,7 @@ User represents information about a user stored in the cache.
 type User struct {
 	Username string
 	SSHKeys  []ssh.PublicKey
+	ARNs     []string
 }
 
 /*
@@ -55,6 +56,7 @@ ldapUserCache connects to LDAP and pulls user settings from it.
 */
 type ldapUserCache struct {
 	users    map[string]*User
+	groups   map[string][]string
 	server   LDAPImplementation
 	stats    g2s.Statter
 	userAttr string
@@ -70,12 +72,36 @@ been recently added to LDAP work, instead of requiring a server restart.
 */
 func (luc *ldapUserCache) Update() error {
 	start := time.Now()
+
+	groupSearchRequest := ldap.NewSearchRequest(
+		luc.baseDN,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
+		0, 0, false,
+		"(url=*)",
+		[]string{"url", "distinguishedName"},
+		nil,
+	)
+
+	groupSearchResult, err := luc.server.Search(groupSearchRequest)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range groupSearchResult.Entries {
+		dn   := entry.GetAttributeValue("distinguishedName")
+		arns := entry.GetAttributeValues("url")
+
+		log.Debug("Adding %s to %s", arns, dn)
+
+		luc.groups[dn] = arns
+	}
+
 	filter := "(sshPublicKey=*)"
 	searchRequest := ldap.NewSearchRequest(
 		luc.baseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		0, 0, false,
-		filter, []string{"sshPublicKey", luc.userAttr},
+		filter, []string{"sshPublicKey", luc.userAttr, "memberOf"},
 		nil,
 	)
 
@@ -101,9 +127,16 @@ func (luc *ldapUserCache) Update() error {
 			userKeys = append(userKeys, userSSHKey)
 		}
 
+		arns := []string{};
+
+		for _, groupDN := range entry.GetAttributeValues("memberOf") {
+			arns = append(arns, luc.groups[groupDN]...)
+		}
+
 		luc.users[username] = &User{
 			SSHKeys:  userKeys,
 			Username: username,
+			ARNs:     arns,
 		}
 
 		log.Debug("Information on %s (re-)generated.", username)
@@ -157,6 +190,7 @@ NewLDAPUserCache returns a properly-configured LDAP cache.
 func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string) (*ldapUserCache, error) {
 	retCache := &ldapUserCache{
 		users:    map[string]*User{},
+		groups:   map[string][]string{},
 		server:   server,
 		stats:    stats,
 		userAttr: userAttr,

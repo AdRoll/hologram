@@ -18,8 +18,10 @@ package server
 
 import (
 	"fmt"
-
+	"strings"
+	"errors"
 	"github.com/goamz/goamz/sts"
+	"github.com/AdRoll/hologram/log"
 )
 
 /*
@@ -62,9 +64,35 @@ func (s *directSessionTokenService) Start() error {
 }
 
 func (s *directSessionTokenService) AssumeRole(user *User, role string) (*sts.Credentials, error) {
+	var arn string
+
+	if strings.HasPrefix(role, "arn:aws:iam") {
+		arn = role
+	} else if strings.Contains(role, ":role/") {
+		arn = fmt.Sprintf("arn:aws:iam::%s", role)
+	} else {
+		arn = fmt.Sprintf("arn:aws:iam::%s:role/%s", s.iamAccount, role)
+	}
+
+	log.Debug("Checking ARN %s against user %s (with access %s)", arn, user.Username, user.ARNs)
+
+	found := false
+	for _, a := range user.ARNs {
+		if arn == a {
+			found = true
+			break
+		}
+	}
+
+	log.Debug("Found %s", found)
+
+	if !found {
+		return nil, errors.New(fmt.Sprintf("User %s is not authorized to assume role %s!", user.Username, arn))
+	}
+
 	options := &sts.AssumeRoleParams{
 		DurationSeconds: 3600, // the maximum allowed for AssumeRole
-		RoleArn:         fmt.Sprintf("arn:aws:iam::%s:role/%s", s.iamAccount, role),
+		RoleArn:         arn,
 		RoleSessionName: user.Username,
 	}
 
