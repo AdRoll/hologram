@@ -149,6 +149,14 @@ You will need to modify the Trusted Entities for each of these roles that you cr
     }
 ```
 
+### LDAP Based Roles
+
+Hologram supports assigning roles based on a user's LDAP group. Roles can be turned on by setting the `enableLDAPRoles` key to `true` in `config/server.json`.
+
+An LDAP group attribute will have to be chosen for user roles. By default `businessCategory` is chosen for this role since it is part of the core LDAP schema. The attribute used can be modified by editing the `roleAttribute` key in `config/server.json`. The value of this attribute should be the name of the group's role in AWS.
+
+Users will have to be added to a group giving them access to the default role before they can use Hologram. It is recommended that a group such as `Hologram-Users` be created with attribute `businessCategory` set to the name of the default AWS role.
+
 ## Deployment Suggestions
 At AdRoll we have Hologram deployed in a fault-tolerant setup, with the following:
 
