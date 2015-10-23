@@ -291,6 +291,6 @@ func New(a Authenticator, c CredentialService, d string, s g2s.Statter, l LDAPIm
 		ldapServer:      l,
 		userAttr:        u,
 		baseDN:          b,
-    enableLDAPRoles: e,
+		enableLDAPRoles: e,
 	}
 }
