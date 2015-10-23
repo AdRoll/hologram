@@ -55,12 +55,14 @@ type LDAPImplementation interface {
 ldapUserCache connects to LDAP and pulls user settings from it.
 */
 type ldapUserCache struct {
-	users    map[string]*User
-	groups   map[string][]string
-	server   LDAPImplementation
-	stats    g2s.Statter
-	userAttr string
-	baseDN   string
+	users           map[string]*User
+	groups          map[string][]string
+	server          LDAPImplementation
+	stats           g2s.Statter
+	userAttr        string
+	baseDN          string
+  enableLDAPRoles bool
+  roleAttribute   string
 }
 
 /*
@@ -72,26 +74,28 @@ been recently added to LDAP work, instead of requiring a server restart.
 */
 func (luc *ldapUserCache) Update() error {
 	start := time.Now()
-	groupSearchRequest := ldap.NewSearchRequest(
-		luc.baseDN,
-		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
-		0, 0, false,
-		"(objectClass=groupOfNames)",
-		[]string{"businessCategory"},
-		nil,
-	)
+  if luc.enableLDAPRoles {
+	  groupSearchRequest := ldap.NewSearchRequest(
+	  	luc.baseDN,
+	  	ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
+	  	0, 0, false,
+	  	"(objectClass=groupOfNames)",
+	  	[]string{luc.roleAttribute},
+	  	nil,
+	  )
 
-	groupSearchResult, err := luc.server.Search(groupSearchRequest)
-	if err != nil {
-		return err
-	}
+    groupSearchResult, err := luc.server.Search(groupSearchRequest)
+    if err != nil {
+      return err
+    }
 
-	for _, entry := range groupSearchResult.Entries {
-		dn   := entry.DN
-		arns := entry.GetAttributeValues("businessCategory")
-    log.Debug("Adding %s to %s", arns, dn)
-		luc.groups[dn] = arns
-	}
+    for _, entry := range groupSearchResult.Entries {
+      dn   := entry.DN
+      arns := entry.GetAttributeValues(luc.roleAttribute)
+      log.Debug("Adding %s to %s", arns, dn)
+      luc.groups[dn] = arns
+    }
+  }
 
 	filter := "(sshPublicKey=*)"
 	searchRequest := ldap.NewSearchRequest(
@@ -107,7 +111,6 @@ func (luc *ldapUserCache) Update() error {
 		return err
 	}
 	for _, entry := range searchResult.Entries {
-    log.Debug("Entry: %s", entry)
 		username := entry.GetAttributeValue(luc.userAttr)
 		userKeys := []ssh.PublicKey{}
 		for _, eachKey := range entry.GetAttributeValues("sshPublicKey") {
@@ -123,13 +126,14 @@ func (luc *ldapUserCache) Update() error {
 
 			userKeys = append(userKeys, userSSHKey)
 		}
-
-		arns := []string{};
-
-		for _, groupDN := range entry.GetAttributeValues("memberOf") {
-      log.Debug(groupDN)
-      arns = append(arns, luc.groups[groupDN]...)
-		}
+    
+    arns := []string{};
+    if luc.enableLDAPRoles {
+		  for _, groupDN := range entry.GetAttributeValues("memberOf") {
+        log.Debug(groupDN)
+        arns = append(arns, luc.groups[groupDN]...)
+		  }
+    }
 
 		luc.users[username] = &User{
 			SSHKeys:  userKeys,
@@ -185,14 +189,16 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 /*
 NewLDAPUserCache returns a properly-configured LDAP cache.
 */
-func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string) (*ldapUserCache, error) {
+func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string) (*ldapUserCache, error) {
 	retCache := &ldapUserCache{
-		users:    map[string]*User{},
-		groups:   map[string][]string{},
-		server:   server,
-		stats:    stats,
-		userAttr: userAttr,
-		baseDN:   baseDN,
+		users:           map[string]*User{},
+		groups:          map[string][]string{},
+		server:          server,
+		stats:           stats,
+		userAttr:        userAttr,
+ 		baseDN:          baseDN,
+    enableLDAPRoles: enableLDAPRoles,
+    roleAttribute: roleAttribute,
 	}
 
 	updateError := retCache.Update()

@@ -70,7 +70,7 @@ func (*dummyCredentials) GetSessionToken(user *server.User) (*sts.Credentials, e
 	}, nil
 }
 
-func (*dummyCredentials) AssumeRole(user *server.User, role string) (*sts.Credentials, error) {
+func (*dummyCredentials) AssumeRole(user *server.User, role string, enableLDAPRoles bool) (*sts.Credentials, error) {
 	return &sts.Credentials{
 		AccessKeyId:     "access_key",
 		SecretAccessKey: "secret",
@@ -129,7 +129,7 @@ func TestServerStateMachine(t *testing.T) {
 			sshKeys:  []string{},
 			req:      neededModifyRequest,
 		}
-		testServer := server.New(authenticator, &dummyCredentials{}, "default", g2s.Noop(), ldap, "cn", "dc=testdn,dc=com")
+		testServer := server.New(authenticator, &dummyCredentials{}, "default", g2s.Noop(), ldap, "cn", "dc=testdn,dc=com", false)
 		r, w := io.Pipe()
 
 		testConnection := protocol.NewMessageConnection(ReadWriter(r, w))

@@ -37,13 +37,14 @@ server is a wrapper for all of the connection and message
 handlers that this server implements.
 */
 type server struct {
-	authenticator Authenticator
-	credentials   CredentialService
-	stats         g2s.Statter
-	DefaultRole   string
-	ldapServer    LDAPImplementation
-	userAttr      string
-	baseDN        string
+	authenticator   Authenticator
+	credentials     CredentialService
+	stats           g2s.Statter
+	DefaultRole     string
+	ldapServer      LDAPImplementation
+	userAttr        string
+	baseDN          string
+  enableLDAPRoles bool
 }
 
 /*
@@ -110,7 +111,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		}
 
 		if user != nil {
-			creds, err := sm.credentials.AssumeRole(user, role)
+			creds, err := sm.credentials.AssumeRole(user, role, sm.enableLDAPRoles)
 			if err != nil {
 				// error message from Amazon, so forward that on to the client
 				errStr := err.Error()
@@ -136,7 +137,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		}
 
 		if user != nil {
-			creds, err := sm.credentials.AssumeRole(user, sm.DefaultRole)
+			creds, err := sm.credentials.AssumeRole(user, sm.DefaultRole, sm.enableLDAPRoles)
 			if err != nil {
 				log.Errorf("Error trying to handle GetUserCredentials: %s", err.Error())
 				m.Close()
@@ -281,14 +282,15 @@ func makeCredsResponse(creds *sts.Credentials) *protocol.Message {
 New returns a server that can be used as a handler for a
 MessageConnection loop.
 */
-func New(a Authenticator, c CredentialService, r string, s g2s.Statter, l LDAPImplementation, u string, b string) *server {
+func New(a Authenticator, c CredentialService, d string, s g2s.Statter, l LDAPImplementation, u string, b string, e bool) *server {
 	return &server{
-		credentials:   c,
-		authenticator: a,
-		stats:         s,
-		DefaultRole:   r,
-		ldapServer:    l,
-		userAttr:      u,
-		baseDN:        b,
+		credentials:     c,
+		authenticator:   a,
+		stats:           s,
+		DefaultRole:     d,
+		ldapServer:      l,
+		userAttr:        u,
+		baseDN:          b,
+    enableLDAPRoles: e,
 	}
 }

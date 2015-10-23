@@ -1,16 +1,18 @@
 {
   "ldap": {
-    "host": "",
+    "host": "ldap.example.com:636",
     "bind": {
-      "dn":       "",
-      "password": ""
+      "dn":       "cn=admin,dc=domain,dc=local",
+      "password": "LDAPServerPa$$word"
     },
     "userattr": "cn",
-    "basedn": ""
+    "basedn": "dc=domain,dc=local",
+    "enableldaproles": false,
+    "roleattr": "businessCategory"
   },
   "aws": {
-    "account":      "",
-    "defaultrole":  ""
+    "account":      "123456789010",
+    "defaultrole":  "default"
   },
   "stats":  "localhost:8125",
   "listen": "0.0.0.0:3100"
