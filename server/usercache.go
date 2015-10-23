@@ -72,13 +72,12 @@ been recently added to LDAP work, instead of requiring a server restart.
 */
 func (luc *ldapUserCache) Update() error {
 	start := time.Now()
-
 	groupSearchRequest := ldap.NewSearchRequest(
 		luc.baseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		0, 0, false,
-		"(url=*)",
-		[]string{"url", "distinguishedName"},
+		"(objectClass=groupOfNames)",
+		[]string{"businessCategory"},
 		nil,
 	)
 
@@ -88,11 +87,9 @@ func (luc *ldapUserCache) Update() error {
 	}
 
 	for _, entry := range groupSearchResult.Entries {
-		dn   := entry.GetAttributeValue("distinguishedName")
-		arns := entry.GetAttributeValues("url")
-
-		log.Debug("Adding %s to %s", arns, dn)
-
+		dn   := entry.DN
+		arns := entry.GetAttributeValues("businessCategory")
+    log.Debug("Adding %s to %s", arns, dn)
 		luc.groups[dn] = arns
 	}
 
@@ -109,8 +106,8 @@ func (luc *ldapUserCache) Update() error {
 	if err != nil {
 		return err
 	}
-
 	for _, entry := range searchResult.Entries {
+    log.Debug("Entry: %s", entry)
 		username := entry.GetAttributeValue(luc.userAttr)
 		userKeys := []ssh.PublicKey{}
 		for _, eachKey := range entry.GetAttributeValues("sshPublicKey") {
@@ -130,7 +127,8 @@ func (luc *ldapUserCache) Update() error {
 		arns := []string{};
 
 		for _, groupDN := range entry.GetAttributeValues("memberOf") {
-			arns = append(arns, luc.groups[groupDN]...)
+      log.Debug(groupDN)
+      arns = append(arns, luc.groups[groupDN]...)
 		}
 
 		luc.users[username] = &User{

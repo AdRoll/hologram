@@ -63,21 +63,28 @@ func (s *directSessionTokenService) Start() error {
 	return nil
 }
 
-func (s *directSessionTokenService) AssumeRole(user *User, role string) (*sts.Credentials, error) {
-	var arn string
+func (s* directSessionTokenService) buildARN(role string) string {
+  var arn string
 
-	if strings.HasPrefix(role, "arn:aws:iam") {
-		arn = role
-	} else if strings.Contains(role, ":role/") {
-		arn = fmt.Sprintf("arn:aws:iam::%s", role)
-	} else {
-		arn = fmt.Sprintf("arn:aws:iam::%s:role/%s", s.iamAccount, role)
-	}
+  if strings.HasPrefix(role, "arn:aws:iam") {
+    arn = role
+  } else if strings.Contains(role, ":role/") {
+    arn = fmt.Sprintf("arn:aws:iam::%s", role)
+  } else {
+    arn = fmt.Sprintf("arn:aws:iam::%s:role/%s", s.iamAccount, role)
+  }
+
+  return arn
+}
+
+func (s *directSessionTokenService) AssumeRole(user *User, role string) (*sts.Credentials, error) {
+  var arn string = s.buildARN(role)
 
 	log.Debug("Checking ARN %s against user %s (with access %s)", arn, user.Username, user.ARNs)
 
 	found := false
 	for _, a := range user.ARNs {
+    a = s.buildARN(a)
 		if arn == a {
 			found = true
 			break
