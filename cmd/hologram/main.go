@@ -34,7 +34,7 @@ func main() {
 	var err error
 
 	if len(args) < 1 {
-		fmt.Println("Usage hologram <cmd>")
+		fmt.Println("Usage: hologram <cmd>")
 		os.Exit(1)
 	}
 

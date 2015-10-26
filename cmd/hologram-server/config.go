@@ -19,10 +19,12 @@ type Config struct {
 			DN       string `json:"dn"`
 			Password string `json:"password"`
 		} `json:"bind"`
-		UserAttr     string `json:"userattr"`
-		BaseDN       string `json:"basedn"`
-		Host         string `json:"host"`
-		InsecureLDAP bool   `json:"insecureldap"`
+		UserAttr        string `json:"userattr"`
+		BaseDN          string `json:"basedn"`
+		Host            string `json:"host"`
+		InsecureLDAP    bool   `json:"insecureldap"`
+		EnableLDAPRoles bool   `json:"enableldaproles"`
+		RoleAttribute   string `json:"roleattr"`
 	} `json:"ldap"`
 	AWS struct {
 		Account     string `json:"account"`

@@ -43,6 +43,8 @@ func main() {
 		ldapBindPassword = flag.String("ldapBindPassword", "", "LDAP password for bind.")
 		statsdHost       = flag.String("stats", "", "Address to send statsd metrics to.")
 		iamAccount       = flag.String("account", "", "AWS Account ID for generating IAM Role ARNs")
+		enableLDAPRoles  = flag.Bool("enableldaproles", false, "Enable role support using LDAP directory.")
+		roleAttribute    = flag.String("roleattr", "businessCategory", "Group attribute to get role from.")
 		defaultRole      = flag.String("role", "", "AWS role to assume by default.")
 		configFile       = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
 		debugMode        = flag.Bool("debug", false, "Enable debug mode.")
@@ -104,6 +106,14 @@ func main() {
 		config.AWS.DefaultRole = *defaultRole
 	}
 
+	if *enableLDAPRoles {
+		config.LDAP.EnableLDAPRoles = true;
+	}
+
+	if *roleAttribute != "" {
+		config.LDAP.RoleAttribute = *roleAttribute
+	}
+
 	var stats g2s.Statter
 	var statsErr error
 
@@ -163,13 +173,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN)
+	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute)
 	if err != nil {
 		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
 		os.Exit(1)
 	}
 
-	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer, config.LDAP.UserAttr, config.LDAP.BaseDN)
+	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles)
 	server, err := remote.NewServer(config.Listen, serverHandler.HandleConnection)
 
 	// Wait for a signal from the OS to shutdown.

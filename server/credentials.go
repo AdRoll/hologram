@@ -18,8 +18,10 @@ package server
 
 import (
 	"fmt"
-
+	"strings"
+	"errors"
 	"github.com/goamz/goamz/sts"
+	"github.com/AdRoll/hologram/log"
 )
 
 /*
@@ -28,7 +30,7 @@ credentials to calling processes. No caching is done of these
 results other than that which the CredentialService does itself.
 */
 type CredentialService interface {
-	AssumeRole(user *User, role string) (*sts.Credentials, error)
+	AssumeRole(user *User, role string, enableLDAPRoles bool) (*sts.Credentials, error)
 }
 
 /*
@@ -61,10 +63,44 @@ func (s *directSessionTokenService) Start() error {
 	return nil
 }
 
-func (s *directSessionTokenService) AssumeRole(user *User, role string) (*sts.Credentials, error) {
+func (s* directSessionTokenService) buildARN(role string) string {
+	var arn string
+
+	if strings.HasPrefix(role, "arn:aws:iam") {
+	arn = role
+	} else if strings.Contains(role, ":role/") {
+		arn = fmt.Sprintf("arn:aws:iam::%s", role)
+	} else {
+		arn = fmt.Sprintf("arn:aws:iam::%s:role/%s", s.iamAccount, role)
+	}
+
+	return arn
+}
+
+func (s *directSessionTokenService) AssumeRole(user *User, role string, enableLDAPRoles bool) (*sts.Credentials, error) {
+	var arn string = s.buildARN(role)
+
+	log.Debug("Checking ARN %s against user %s (with access %s)", arn, user.Username, user.ARNs)
+	
+	if enableLDAPRoles {
+		found := false
+		for _, a := range user.ARNs {
+			a = s.buildARN(a)
+			if arn == a {
+				found = true 
+				break
+			}
+		}
+		
+		log.Debug("Found %s", found)
+
+		if !found {
+			return nil, errors.New(fmt.Sprintf("User %s is not authorized to assume role %s!", user.Username, arn))
+		}
+	}
 	options := &sts.AssumeRoleParams{
 		DurationSeconds: 3600, // the maximum allowed for AssumeRole
-		RoleArn:         fmt.Sprintf("arn:aws:iam::%s:role/%s", s.iamAccount, role),
+		RoleArn:         arn,
 		RoleSessionName: user.Username,
 	}
 
