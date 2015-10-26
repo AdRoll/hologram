@@ -57,7 +57,7 @@ func main() {
 	if *debugMode {
 		log.DebugMode(true)
 		log.Debug("Enabling debug log output. Use sparingly.")
-  }
+	}
 
 	// Parse in options from the given config file.
 	log.Debug("Loading configuration from %s", *configFile)

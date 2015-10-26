@@ -61,8 +61,8 @@ type ldapUserCache struct {
 	stats           g2s.Statter
 	userAttr        string
 	baseDN          string
-  	enableLDAPRoles bool
-  	roleAttribute   string
+	enableLDAPRoles bool
+	roleAttribute   string
 }
 
 /*

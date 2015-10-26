@@ -44,7 +44,7 @@ type server struct {
 	ldapServer      LDAPImplementation
 	userAttr        string
 	baseDN          string
-  enableLDAPRoles bool
+	enableLDAPRoles bool
 }
 
 /*
