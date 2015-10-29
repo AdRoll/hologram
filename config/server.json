@@ -15,5 +15,6 @@
     "defaultrole":  "default"
   },
   "stats":  "localhost:8125",
-  "listen": "0.0.0.0:3100"
+  "listen": "0.0.0.0:3100",
+  "cachetimeout": 3600
 }
