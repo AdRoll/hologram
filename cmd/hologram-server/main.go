@@ -41,12 +41,13 @@ func main() {
 		ldapBindDN       = flag.String("ldapBindDN", "", "LDAP DN to bind to for login.")
 		ldapInsecure     = flag.Bool("insecureLDAP", false, "INSECURE: Don't use TLS for LDAP connection.")
 		ldapBindPassword = flag.String("ldapBindPassword", "", "LDAP password for bind.")
-		statsdHost       = flag.String("stats", "", "Address to send statsd metrics to.")
-		iamAccount       = flag.String("account", "", "AWS Account ID for generating IAM Role ARNs")
-		enableLDAPRoles  = flag.Bool("enableldaproles", false, "Enable role support using LDAP directory.")
-		roleAttribute    = flag.String("roleattr", "businessCategory", "Group attribute to get role from.")
+		statsdHost       = flag.String("statsHost", "", "Address to send statsd metrics to.")
+		iamAccount       = flag.String("iamaccounjt", "", "AWS Account ID for generating IAM Role ARNs")
+		enableLDAPRoles  = flag.Bool("ldaproles", false, "Enable role support using LDAP directory.")
+		roleAttribute    = flag.String("roleattribute", "", "Group attribute to get role from.")
 		defaultRole      = flag.String("role", "", "AWS role to assume by default.")
 		configFile       = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
+		cacheTimeout     = flag.Int("cachetime", 3600, "Time in seconds after which to refresh LDAP user cache.")
 		debugMode        = flag.Bool("debug", false, "Enable debug mode.")
 		config           Config
 	)
@@ -112,6 +113,10 @@ func main() {
 
 	if *roleAttribute != "" {
 		config.LDAP.RoleAttribute = *roleAttribute
+	}
+
+	if *cacheTimeout != 3600 {
+		config.CacheTimeout = *cacheTimeout
 	}
 
 	var stats g2s.Statter
@@ -195,8 +200,11 @@ func main() {
 
 	// SIGHUP should make Hologram server reload its cache of user information
 	// from LDAP.
-	reloadCache := make(chan os.Signal)
-	signal.Notify(reloadCache, syscall.SIGHUP)
+	reloadCacheSigHup := make(chan os.Signal)
+	signal.Notify(reloadCacheSigHup, syscall.SIGHUP)
+
+	// Reload the cache based on time set in configuration
+	cacheTimeoutTicker := time.NewTicker(time.Duration(config.CacheTimeout) * time.Second)
 
 	log.Info("Hologram server is online, waiting for termination.")
 
@@ -211,8 +219,11 @@ WaitForTermination:
 		case <-debugDisable:
 			log.Info("Disabling debug mode.")
 			log.DebugMode(false)
-		case <-reloadCache:
+		case <-reloadCacheSigHup:
 			log.Info("Force-reloading user cache.")
+			ldapCache.Update()
+		case <-cacheTimeoutTicker.C:
+			log.Info("Cache timeout. Reloading user cache.")
 			ldapCache.Update()
 		}
 	}

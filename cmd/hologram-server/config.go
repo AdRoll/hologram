@@ -32,4 +32,5 @@ type Config struct {
 	} `json:"aws"`
 	Stats  string `json:"stats"`
 	Listen string `json:"listen"`
+	CacheTimeout int `json:"cachetimeout"`
 }
