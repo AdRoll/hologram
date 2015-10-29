@@ -42,7 +42,7 @@ func main() {
 		ldapInsecure     = flag.Bool("insecureLDAP", false, "INSECURE: Don't use TLS for LDAP connection.")
 		ldapBindPassword = flag.String("ldapBindPassword", "", "LDAP password for bind.")
 		statsdHost       = flag.String("statsHost", "", "Address to send statsd metrics to.")
-		iamAccount       = flag.String("iamaccounjt", "", "AWS Account ID for generating IAM Role ARNs")
+		iamAccount       = flag.String("iamaccount", "", "AWS Account ID for generating IAM Role ARNs")
 		enableLDAPRoles  = flag.Bool("ldaproles", false, "Enable role support using LDAP directory.")
 		roleAttribute    = flag.String("roleattribute", "", "Group attribute to get role from.")
 		defaultRole      = flag.String("role", "", "AWS role to assume by default.")
