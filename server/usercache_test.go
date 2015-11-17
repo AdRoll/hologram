@@ -121,13 +121,13 @@ func TestLDAPUserCache(t *testing.T) {
 		keyValue := base64.StdEncoding.EncodeToString(keys[0].Blob)
 
 		// Load in an additional key from the test data.
-		privateKey, _     := ssh.ParsePrivateKey(testKey)
-		testPublicKey     := base64.StdEncoding.EncodeToString(privateKey.PublicKey().Marshal())
+		privateKey, _ := ssh.ParsePrivateKey(testKey)
+		testPublicKey := base64.StdEncoding.EncodeToString(privateKey.PublicKey().Marshal())
 
 		s := &StubLDAPServer{
 			Keys: []string{keyValue, testPublicKey},
 		}
-		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "")
+		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "")
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
@@ -196,13 +196,12 @@ func TestLDAPUserCache(t *testing.T) {
 			})
 		})
 
-
 		testAuthorizedKey := string(ssh.MarshalAuthorizedKey(privateKey.PublicKey()))
 
 		s = &StubLDAPServer{
 			Keys: []string{testAuthorizedKey},
 		}
-		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "")
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "")
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 

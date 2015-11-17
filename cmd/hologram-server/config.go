@@ -25,12 +25,13 @@ type Config struct {
 		InsecureLDAP    bool   `json:"insecureldap"`
 		EnableLDAPRoles bool   `json:"enableldaproles"`
 		RoleAttribute   string `json:"roleattr"`
+		DefaultRoleAttr string `json:"defaultroleattr"`
 	} `json:"ldap"`
 	AWS struct {
 		Account     string `json:"account"`
 		DefaultRole string `json:"defaultrole"`
 	} `json:"aws"`
-	Stats  string `json:"stats"`
-	Listen string `json:"listen"`
-	CacheTimeout int `json:"cachetimeout"`
+	Stats        string `json:"stats"`
+	Listen       string `json:"listen"`
+	CacheTimeout int    `json:"cachetimeout"`
 }

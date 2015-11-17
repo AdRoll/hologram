@@ -17,11 +17,11 @@ package server
 // It was a service before because it held state, which is now gone.
 
 import (
-	"fmt"
-	"strings"
 	"errors"
-	"github.com/goamz/goamz/sts"
+	"fmt"
 	"github.com/AdRoll/hologram/log"
+	"github.com/goamz/goamz/sts"
+	"strings"
 )
 
 /*
@@ -63,11 +63,11 @@ func (s *directSessionTokenService) Start() error {
 	return nil
 }
 
-func (s* directSessionTokenService) buildARN(role string) string {
+func (s *directSessionTokenService) buildARN(role string) string {
 	var arn string
 
 	if strings.HasPrefix(role, "arn:aws:iam") {
-	arn = role
+		arn = role
 	} else if strings.Contains(role, ":role/") {
 		arn = fmt.Sprintf("arn:aws:iam::%s", role)
 	} else {
@@ -81,23 +81,24 @@ func (s *directSessionTokenService) AssumeRole(user *User, role string, enableLD
 	var arn string = s.buildARN(role)
 
 	log.Debug("Checking ARN %s against user %s (with access %s)", arn, user.Username, user.ARNs)
-	
+
 	if enableLDAPRoles {
 		found := false
 		for _, a := range user.ARNs {
 			a = s.buildARN(a)
 			if arn == a {
-				found = true 
+				found = true
 				break
 			}
 		}
-		
+
 		log.Debug("Found %s", found)
 
 		if !found {
 			return nil, errors.New(fmt.Sprintf("User %s is not authorized to assume role %s!", user.Username, arn))
 		}
 	}
+	log.Debug("User: %s", user.Username)
 	options := &sts.AssumeRoleParams{
 		DurationSeconds: 3600, // the maximum allowed for AssumeRole
 		RoleArn:         arn,
@@ -106,6 +107,7 @@ func (s *directSessionTokenService) AssumeRole(user *User, role string, enableLD
 
 	r, err := s.sts.AssumeRole(options)
 	if err != nil {
+		log.Debug("Error!! %s", err.Error())
 		return nil, err
 	}
 	return &r.Credentials, nil

@@ -45,6 +45,7 @@ func main() {
 		iamAccount       = flag.String("iamaccount", "", "AWS Account ID for generating IAM Role ARNs")
 		enableLDAPRoles  = flag.Bool("ldaproles", false, "Enable role support using LDAP directory.")
 		roleAttribute    = flag.String("roleattribute", "", "Group attribute to get role from.")
+		defaultRoleAttr  = flag.String("defaultroleattr", "", "User attribute to check to determine a user's default role.")
 		defaultRole      = flag.String("role", "", "AWS role to assume by default.")
 		configFile       = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
 		cacheTimeout     = flag.Int("cachetime", 3600, "Time in seconds after which to refresh LDAP user cache.")
@@ -108,7 +109,11 @@ func main() {
 	}
 
 	if *enableLDAPRoles {
-		config.LDAP.EnableLDAPRoles = true;
+		config.LDAP.EnableLDAPRoles = true
+	}
+
+	if *defaultRoleAttr != "" {
+		config.LDAP.DefaultRoleAttr = *defaultRoleAttr
 	}
 
 	if *roleAttribute != "" {
@@ -178,13 +183,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute)
+	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr)
 	if err != nil {
 		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
 		os.Exit(1)
 	}
 
-	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles)
+	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.DefaultRoleAttr)
 	server, err := remote.NewServer(config.Listen, serverHandler.HandleConnection)
 
 	// Wait for a signal from the OS to shutdown.
