@@ -9,6 +9,7 @@
     "basedn": "dc=domain,dc=local",
     "enableldaproles": false,
     "roleattr": "businessCategory"
+    "defaultroleattr": "employeeType"
   },
   "aws": {
     "account":      "123456789010",

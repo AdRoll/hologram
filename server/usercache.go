@@ -27,9 +27,10 @@ import (
 User represents information about a user stored in the cache.
 */
 type User struct {
-	Username string
-	SSHKeys  []ssh.PublicKey
-	ARNs     []string
+	Username    string
+	SSHKeys     []ssh.PublicKey
+	ARNs        []string
+	DefaultRole string
 }
 
 /*
@@ -63,6 +64,8 @@ type ldapUserCache struct {
 	baseDN          string
 	enableLDAPRoles bool
 	roleAttribute   string
+	defaultRole     string
+	defaultRoleAttr string
 }
 
 /*
@@ -84,17 +87,17 @@ func (luc *ldapUserCache) Update() error {
 			nil,
 		)
 
-	groupSearchResult, err := luc.server.Search(groupSearchRequest)
-	if err != nil {
-		return err
-	}
+		groupSearchResult, err := luc.server.Search(groupSearchRequest)
+		if err != nil {
+			return err
+		}
 
-	for _, entry := range groupSearchResult.Entries {
-		dn   := entry.DN
-		arns := entry.GetAttributeValues(luc.roleAttribute)
-		log.Debug("Adding %s to %s", arns, dn)
-		luc.groups[dn] = arns
-	}
+		for _, entry := range groupSearchResult.Entries {
+			dn := entry.DN
+			arns := entry.GetAttributeValues(luc.roleAttribute)
+			log.Debug("Adding %s to %s", arns, dn)
+			luc.groups[dn] = arns
+		}
 	}
 
 	filter := "(sshPublicKey=*)"
@@ -102,7 +105,7 @@ func (luc *ldapUserCache) Update() error {
 		luc.baseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		0, 0, false,
-		filter, []string{"sshPublicKey", luc.userAttr, "memberOf"},
+		filter, []string{"sshPublicKey", luc.userAttr, "memberOf", luc.defaultRoleAttr},
 		nil,
 	)
 
@@ -127,18 +130,24 @@ func (luc *ldapUserCache) Update() error {
 			userKeys = append(userKeys, userSSHKey)
 		}
 
-	arns := []string{};
-	if luc.enableLDAPRoles {
-		for _, groupDN := range entry.GetAttributeValues("memberOf") {
-		log.Debug(groupDN)
-		arns = append(arns, luc.groups[groupDN]...)
+		userDefaultRole := luc.defaultRole
+		arns := []string{}
+		if luc.enableLDAPRoles {
+			userDefaultRole = entry.GetAttributeValue(luc.defaultRoleAttr)
+			if userDefaultRole == "" {
+				userDefaultRole = luc.defaultRole
+			}
+			for _, groupDN := range entry.GetAttributeValues("memberOf") {
+				log.Debug(groupDN)
+				arns = append(arns, luc.groups[groupDN]...)
+			}
 		}
-	}
 
 		luc.users[username] = &User{
-			SSHKeys:  userKeys,
-			Username: username,
-			ARNs:     arns,
+			SSHKeys:     userKeys,
+			Username:    username,
+			ARNs:        arns,
+			DefaultRole: userDefaultRole,
 		}
 
 		log.Debug("Information on %s (re-)generated.", username)
@@ -155,54 +164,56 @@ func (luc *ldapUserCache) Users() map[string]*User {
 
 func (luc *ldapUserCache) _verify(username string, challenge []byte, sshSig *ssh.Signature) (
 	*User, error) {
-		for _, user := range luc.users {
-			for _, key := range user.SSHKeys {
-				verifyErr := key.Verify(challenge, sshSig)
-				if verifyErr == nil {
-					return user, nil
-				}
+	for _, user := range luc.users {
+		for _, key := range user.SSHKeys {
+			verifyErr := key.Verify(challenge, sshSig)
+			if verifyErr == nil {
+				return user, nil
 			}
 		}
-
-		return nil, nil
 	}
 
-	/*
+	return nil, nil
+}
 
-	*/
-	func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig *ssh.Signature) (
-		*User, error) {
-			// Loop through all of the keys and attempt verification.
-			retUser, _ := luc._verify(username, challenge, sshSig)
+/*
 
-			if retUser == nil {
-				log.Debug("Could not find %s in the LDAP cache; updating from the server.", username)
-				luc.stats.Counter(1.0, "ldapCacheMiss", 1)
+ */
+func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig *ssh.Signature) (
+	*User, error) {
+	// Loop through all of the keys and attempt verification.
+	retUser, _ := luc._verify(username, challenge, sshSig)
 
-				// We should update LDAP cache again to retry keys.
-				luc.Update()
-				return luc._verify(username, challenge, sshSig)
-			}
-			return retUser, nil
-		}
+	if retUser == nil {
+		log.Debug("Could not find %s in the LDAP cache; updating from the server.", username)
+		luc.stats.Counter(1.0, "ldapCacheMiss", 1)
 
-		/*
-		NewLDAPUserCache returns a properly-configured LDAP cache.
-		*/
-		func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string) (*ldapUserCache, error) {
-			retCache := &ldapUserCache{
-				users:           map[string]*User{},
-				groups:          map[string][]string{},
-				server:          server,
-				stats:           stats,
-				userAttr:        userAttr,
-				baseDN:          baseDN,
-				enableLDAPRoles: enableLDAPRoles,
-				roleAttribute: roleAttribute,
-			}
+		// We should update LDAP cache again to retry keys.
+		luc.Update()
+		return luc._verify(username, challenge, sshSig)
+	}
+	return retUser, nil
+}
 
-			updateError := retCache.Update()
+/*
+	NewLDAPUserCache returns a properly-configured LDAP cache.
+*/
+func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string) (*ldapUserCache, error) {
+	retCache := &ldapUserCache{
+		users:           map[string]*User{},
+		groups:          map[string][]string{},
+		server:          server,
+		stats:           stats,
+		userAttr:        userAttr,
+		baseDN:          baseDN,
+		enableLDAPRoles: enableLDAPRoles,
+		roleAttribute:   roleAttribute,
+		defaultRole:     defaultRole,
+		defaultRoleAttr: defaultRoleAttr,
+	}
 
-			// Start updating the user cache.
-			return retCache, updateError
-		}
+	updateError := retCache.Update()
+
+	// Start updating the user cache.
+	return retCache, updateError
+}

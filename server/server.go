@@ -38,13 +38,15 @@ handlers that this server implements.
 */
 type server struct {
 	authenticator   Authenticator
+	userCache       UserCache
 	credentials     CredentialService
 	stats           g2s.Statter
-	DefaultRole     string
+	defaultRole     string
 	ldapServer      LDAPImplementation
 	userAttr        string
 	baseDN          string
 	enableLDAPRoles bool
+	defaultRoleAttr string
 }
 
 /*
@@ -97,7 +99,6 @@ accepts from clients.
 */
 func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *protocol.ServerRequest) {
 	if assumeRoleMsg := r.GetAssumeRole(); assumeRoleMsg != nil {
-		log.Debug("Handling an assumeRole request.")
 		sm.stats.Counter(1.0, "messages.assumeRole", 1)
 
 		role := assumeRoleMsg.GetRole()
@@ -105,7 +106,6 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		user, err := sm.SSHChallenge(m)
 
 		if err != nil {
-			log.Errorf("Error trying to handle AssumeRole: %s", err.Error())
 			m.Close()
 			return
 		}
@@ -121,7 +121,12 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 				log.Errorf("Error from AWS for AssumeRole: %s", err.Error())
 				m.Write(errMsg)
 				sm.stats.Counter(1.0, "errors.assumeRole", 1)
-				//m.Close()
+
+				// Attempt to use the default role to fall back
+				creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
+				if err == nil {
+					m.Write(makeCredsResponse(creds))
+				}
 				return
 			}
 			m.Write(makeCredsResponse(creds))
@@ -137,9 +142,19 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		}
 
 		if user != nil {
-			creds, err := sm.credentials.AssumeRole(user, sm.DefaultRole, sm.enableLDAPRoles)
+			creds, err := sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
 			if err != nil {
 				log.Errorf("Error trying to handle GetUserCredentials: %s", err.Error())
+				// Update user cache and try again
+				sm.userCache.Update()
+				creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
+				if err != nil {
+					errStr := fmt.Sprintf("Could not get user credentials. %s may not have been given Hologram access yet.", user.Username)
+					errMsg := &protocol.Message{
+						Error: &errStr,
+					}
+					m.Write(errMsg)
+				}
 				m.Close()
 				return
 			}
@@ -282,15 +297,25 @@ func makeCredsResponse(creds *sts.Credentials) *protocol.Message {
 New returns a server that can be used as a handler for a
 MessageConnection loop.
 */
-func New(a Authenticator, c CredentialService, d string, s g2s.Statter, l LDAPImplementation, u string, b string, e bool) *server {
+func New(userCache UserCache,
+	credentials CredentialService,
+	defaultRole string,
+	stats g2s.Statter,
+	ldapServer LDAPImplementation,
+	userAttr string,
+	baseDN string,
+	enableLDAPRoles bool,
+	defaultRoleAttr string) *server {
 	return &server{
-		credentials:     c,
-		authenticator:   a,
-		stats:           s,
-		DefaultRole:     d,
-		ldapServer:      l,
-		userAttr:        u,
-		baseDN:          b,
-		enableLDAPRoles: e,
+		credentials:     credentials,
+		authenticator:   userCache,
+		userCache:       userCache,
+		defaultRole:     defaultRole,
+		stats:           stats,
+		ldapServer:      ldapServer,
+		userAttr:        userAttr,
+		baseDN:          baseDN,
+		enableLDAPRoles: enableLDAPRoles,
+		defaultRoleAttr: defaultRoleAttr,
 	}
 }
