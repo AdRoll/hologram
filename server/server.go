@@ -113,21 +113,27 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		if user != nil {
 			creds, err := sm.credentials.AssumeRole(user, role, sm.enableLDAPRoles)
 			if err != nil {
-				// error message from Amazon, so forward that on to the client
-				errStr := err.Error()
-				errMsg := &protocol.Message{
-					Error: &errStr,
-				}
-				log.Errorf("Error from AWS for AssumeRole: %s", err.Error())
-				m.Write(errMsg)
-				sm.stats.Counter(1.0, "errors.assumeRole", 1)
+				// Update user cache and try again
+				sm.userCache.Update()
+				creds, err := sm.credentials.AssumeRole(user, role, sm.enableLDAPRoles)
 
-				// Attempt to use the default role to fall back
-				creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
-				if err == nil {
-					m.Write(makeCredsResponse(creds))
+				if err != nil {
+					// error message from Amazon, so forward that on to the client
+					errStr := err.Error()
+					errMsg := &protocol.Message{
+						Error: &errStr,
+					}
+					log.Errorf("Error from AWS for AssumeRole: %s", err.Error())
+					m.Write(errMsg)
+					sm.stats.Counter(1.0, "errors.assumeRole", 1)
+
+					// Attempt to use the default role to fall back
+					creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
+					if err == nil {
+						m.Write(makeCredsResponse(creds))
+					}
+					return
 				}
-				return
 			}
 			m.Write(makeCredsResponse(creds))
 			return
