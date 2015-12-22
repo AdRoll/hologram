@@ -38,6 +38,7 @@ ENV HOLOGRAM_DIR /go/src/github.com/AdRoll/hologram
 ENV BUILD_SCRIPTS ${HOLOGRAM_DIR}/buildscripts
 ENV PATH ${BUILD_SCRIPTS}:$PATH
 ENV BIN_DIR /go/bin
+COPY . /go/src/github.com/AdRoll/hologram
 WORKDIR /go/src/github.com/AdRoll/hologram
 
 VOLUME ["/go/src/github.com/AdRoll/hologram"]
