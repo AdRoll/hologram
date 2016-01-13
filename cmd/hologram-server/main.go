@@ -18,6 +18,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -32,6 +33,33 @@ import (
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 )
+
+func ConnectLDAP(conf LDAP) (*ldap.Conn, error) {
+	var ldapServer *ldap.Conn
+	var err error
+
+	// Connect to the LDAP server using TLS or not depending on the config
+	if conf.InsecureLDAP {
+		log.Debug("Connecting to LDAP at server %s (NOT using TLS).", conf.Host)
+		ldapServer, err = ldap.Dial("tcp", conf.Host)
+	} else {
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		log.Debug("Connecting to LDAP at server %s.", conf.Host)
+		ldapServer, err = ldap.DialTLS("tcp", conf.Host, tlsConfig)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("Could not dial LDAP! %v", err)
+	}
+
+	if err = ldapServer.Bind(conf.Bind.DN, conf.Bind.Password); err != nil {
+		return nil, fmt.Errorf("Could not bind to LDAP! %v", err)
+	}
+
+	return ldapServer, nil
+}
 
 func main() {
 	// Parse command-line flags for this system.
@@ -154,32 +182,10 @@ func main() {
 	stsConnection := sts.New(auth, aws.Regions["us-east-1"])
 	credentialsService := server.NewDirectSessionTokenService(config.AWS.Account, stsConnection)
 
-	var ldapServer *ldap.Conn
-
-	// Connect to the LDAP server using TLS or not depending on the config
-	if config.LDAP.InsecureLDAP {
-		log.Debug("Connecting to LDAP at server %s (NOT using TLS).", config.LDAP.Host)
-		ldapServer, err = ldap.Dial("tcp", config.LDAP.Host)
-		if err != nil {
-			log.Errorf("Could not dial LDAP! %s", err.Error())
-			os.Exit(1)
-		}
-	} else {
-		// Connect to the LDAP server with sample credentials.
-		tlsConfig := &tls.Config{
-			InsecureSkipVerify: true,
-		}
-
-		log.Debug("Connecting to LDAP at server %s.", config.LDAP.Host)
-		ldapServer, err = ldap.DialTLS("tcp", config.LDAP.Host, tlsConfig)
-		if err != nil {
-			log.Errorf("Could not dial LDAP! %s", err.Error())
-			os.Exit(1)
-		}
-	}
-
-	if bindErr := ldapServer.Bind(config.LDAP.Bind.DN, config.LDAP.Bind.Password); bindErr != nil {
-		log.Errorf("Could not bind to LDAP! %s", bindErr.Error())
+	open := func() (server.LDAPImplementation, error) { return ConnectLDAP(config.LDAP) }
+	ldapServer, err := server.NewPersistentLDAP(open)
+	if err != nil {
+		log.Errorf("Fatal error, exiting: %s", err.Error())
 		os.Exit(1)
 	}
 
