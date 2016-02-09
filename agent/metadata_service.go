@@ -105,7 +105,8 @@ These fields are constructed to be obviously wrong and would never be found in t
 production environment.
 */
 func (mds *metadataService) getServices(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "fake-meta-data")
+	w.Header().Set("Server", "EC2ws")
+	fmt.Fprint(w, "meta-data")
 }
 
 func (mds *metadataService) getInstanceID(w http.ResponseWriter, r *http.Request) {

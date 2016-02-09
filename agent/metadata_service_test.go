@@ -80,7 +80,7 @@ func TestMetadataService(t *testing.T) {
 
 		Convey("It should return a fake services list.", func() {
 			respBody := string(request(service.Port(), "/latest"))
-			So(respBody, ShouldEqual, "fake-meta-data")
+			So(respBody, ShouldEqual, "meta-data")
 		})
 
 		Convey("It should return a fake instance ID.", func() {
