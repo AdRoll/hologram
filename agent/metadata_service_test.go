@@ -78,6 +78,11 @@ func TestMetadataService(t *testing.T) {
 			So(creds.Expiration, ShouldEqual, "2014-10-22T12:21:17Z")
 		})
 
+		Convey("It should return a fake services list.", func() {
+			respBody := string(request(service.Port(), "/latest"))
+			So(respBody, ShouldEqual, "fake-meta-data")
+		})
+
 		Convey("It should return a fake instance ID.", func() {
 			respBody := string(request(service.Port(), "/latest/meta-data/instance-id"))
 			So(respBody, ShouldEqual, "i-deadbeef")

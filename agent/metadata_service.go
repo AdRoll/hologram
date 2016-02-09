@@ -57,6 +57,7 @@ Spawned in the background.
 */
 func (mds *metadataService) listen() {
 	handler := http.NewServeMux()
+	handler.HandleFunc("/latest", mds.getServices)
 	handler.HandleFunc("/latest/meta-data/iam/security-credentials/", mds.enumerateRoles)
 	handler.HandleFunc("/latest/meta-data/iam/security-credentials/hologram-access", mds.getCredentials)
 	handler.HandleFunc("/latest/meta-data/instance-id", mds.getInstanceID)
@@ -103,6 +104,10 @@ Return fake data for programs that depend on data from the metadata service.
 These fields are constructed to be obviously wrong and would never be found in the
 production environment.
 */
+func (mds *metadataService) getServices(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "fake-meta-data")
+}
+
 func (mds *metadataService) getInstanceID(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "i-deadbeef")
 }
