@@ -171,6 +171,10 @@ Here are some issues we've run into running Hologram that you might want to be a
 * **If you use an ELB to load-balance between Hologram servers, do not have it terminate the TLS connection.** It's pointless to have your ELB use the SSL certificate compiled into Hologram, when the servers themselves know how to handle it. Let them do their job, and have your ELB just use the TCP protocol.
 * **Your LDAP server might not support TLS** In that case, you'll want to set "insecureldap" to true in the server config file which will configure hologram to connect to the LDAP server without using TLS. Otherwise you might just get a (somewhat cryptic) "connection reset by peer" error.
 
+## Related Projects
+
+[Holochrome](https://github.com/ryansydnor/holochrome) is a chrome extension that allows you to easily log in and switch between your AWS accounts using a single key stroke.  As it uses the metadata service, it can use hologram as its credential provider.
+
 ## License
 
 Licensed under the Apache License, Version 2.0 (the "License"); see LICENSE for more details.
