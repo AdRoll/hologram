@@ -173,7 +173,7 @@ Here are some issues we've run into running Hologram that you might want to be a
 
 ## Related Projects
 
-[Holochrome](https://github.com/ryansydnor/holochrome) is a chrome extension that allows you to easily log in and switch between your AWS accounts using a single key stroke.  As it uses the metadata service, it can use hologram as its credential provider.
+[Holochrome](https://github.com/Bridgewater/holochrome) is a chrome extension that allows you to easily log in and switch between your AWS accounts using a single key stroke.  As it uses the metadata service, it can use hologram as its credential provider.
 
 ## License
 
