@@ -16,11 +16,16 @@ package agent
 import (
 	"errors"
 	"fmt"
-	"time"
-
+	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/sts"
+	"strings"
+	"time"
 )
 
 type CredentialsReceiver interface {
@@ -36,6 +41,95 @@ type Client interface {
 type client struct {
 	connectionString string
 	cr               CredentialsReceiver
+}
+
+type accessKeyClient struct {
+	sts         *sts.STS
+	iamAccount  string
+	iamUsername string
+	cr          CredentialsReceiver
+}
+
+func AccessKeyClient(accessKey string, secretKey string, cr CredentialsReceiver) *accessKeyClient {
+	sts := sts.New(session.New(&aws.Config{Credentials: credentials.NewStaticCredentials(accessKey, secretKey, "")}))
+	iamconn := iam.New(session.New(&aws.Config{Credentials: credentials.NewStaticCredentials(accessKey, secretKey, "")}))
+	iamUser, err := iamconn.GetUser(&iam.GetUserInput{})
+	if err != nil {
+		log.Errorf("Unable to get current user.  Err: %s", err)
+	}
+	iamAccount := strings.Split(*iamUser.User.Arn, ":")[4]
+	iamUsername := iamUser.User.UserName
+
+	c := &accessKeyClient{
+		sts:         sts,
+		iamAccount:  iamAccount,
+		iamUsername: *iamUsername,
+		cr:          cr,
+	}
+	if cr != nil {
+		cr.SetClient(c)
+	}
+	return c
+}
+
+func (c *accessKeyClient) buildARN(role string) *string {
+	var arn string
+
+	if strings.HasPrefix(role, "arn:aws:iam") {
+		arn = role
+	} else if strings.Contains(role, ":role/") {
+		arn = fmt.Sprintf("arn:aws:iam::%s", role)
+	} else {
+		arn = fmt.Sprintf("arn:aws:iam::%s:role/%s", c.iamAccount, role)
+	}
+
+	return &arn
+}
+
+func (c *accessKeyClient) AssumeRole(role string) error {
+	durationSeconds := int64(3600)
+	roleArn := c.buildARN(role)
+	roleSessionName := c.iamUsername
+	options := &sts.AssumeRoleInput{
+		DurationSeconds: &durationSeconds,
+		RoleArn:         roleArn,
+		RoleSessionName: &roleSessionName,
+	}
+
+	response, err := c.sts.AssumeRole(options)
+	if err != nil {
+		return err
+	}
+	creds := &sts.Credentials{
+		AccessKeyId:     response.Credentials.AccessKeyId,
+		SessionToken:    response.Credentials.SessionToken,
+		SecretAccessKey: response.Credentials.SecretAccessKey,
+		Expiration:      response.Credentials.Expiration,
+	}
+	if err != nil {
+		return err
+	}
+	c.cr.SetCredentials(creds, role)
+	return nil
+}
+
+func (c *accessKeyClient) GetUserCredentials() error {
+	durationSeconds := int64(3600)
+	options := &sts.GetSessionTokenInput{
+		DurationSeconds: &durationSeconds,
+	}
+	response, err := c.sts.GetSessionToken(options)
+	creds := &sts.Credentials{
+		AccessKeyId:     response.Credentials.AccessKeyId,
+		SessionToken:    response.Credentials.SessionToken,
+		SecretAccessKey: response.Credentials.SecretAccessKey,
+		Expiration:      response.Credentials.Expiration,
+	}
+	if err != nil {
+		return err
+	}
+	c.cr.SetCredentials(creds, "")
+	return nil
 }
 
 func NewClient(connectionString string, cr CredentialsReceiver) *client {
@@ -114,11 +208,16 @@ func (c *client) requestCredentials(req *protocol.ServerRequest, role string) er
 				}
 			} else if serverResponse.GetCredentials() != nil {
 				credsResponse := serverResponse.GetCredentials()
+				accessKeyId := credsResponse.GetAccessKeyId()
+				sessionToken := credsResponse.GetAccessToken()
+				secretAccessKey := credsResponse.GetSecretAccessKey()
+				expiration := time.Unix(credsResponse.GetExpiration(), 0)
+
 				creds := &sts.Credentials{
-					AccessKeyId:     credsResponse.GetAccessKeyId(),
-					SessionToken:    credsResponse.GetAccessToken(),
-					SecretAccessKey: credsResponse.GetSecretAccessKey(),
-					Expiration:      time.Unix(credsResponse.GetExpiration(), 0),
+					AccessKeyId:     &accessKeyId,
+					SessionToken:    &sessionToken,
+					SecretAccessKey: &secretAccessKey,
+					Expiration:      &expiration,
 				}
 				c.cr.SetCredentials(creds, role)
 				return nil

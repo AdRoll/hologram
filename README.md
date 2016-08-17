@@ -149,6 +149,12 @@ You will need to modify the Trusted Entities for each of these roles that you cr
     }
 ```
 
+### Serverless
+
+The hologram agent supports being run without a server, based on long-lived user credentials.  To use, instead of defining host in the config.json file, define "accessKey" and "secretKey."
+
+The user must have permission to iam:GetUser on itself(resource "arn:aws:iam::ACCOUNT-ID-WITHOUT-HYPHENS:user/${aws:username}").  `hologram me` uses getsessiontoken from sts, which has some [limitations](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_getsessiontoken.html).  With assume role permissions, `hologram use <role>` will assume into any role bypassing those restrictions.
+
 ### LDAP Based Roles
 
 Hologram supports assigning roles based on a user's LDAP group. Roles can be turned on by setting the `enableLDAPRoles` key to `true` in `config/server.json`.

@@ -22,7 +22,7 @@ import (
 
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	"golang.org/x/crypto/ssh"
@@ -289,9 +289,9 @@ func makeCredsResponse(creds *sts.Credentials) *protocol.Message {
 	credsResponse := &protocol.Message{
 		ServerResponse: &protocol.ServerResponse{
 			Credentials: &protocol.STSCredentials{
-				AccessKeyId:     &creds.AccessKeyId,
-				SecretAccessKey: &creds.SecretAccessKey,
-				AccessToken:     &creds.SessionToken,
+				AccessKeyId:     creds.AccessKeyId,
+				SecretAccessKey: creds.SecretAccessKey,
+				AccessToken:     creds.SessionToken,
 				Expiration:      &expiration,
 			},
 		},
