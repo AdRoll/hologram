@@ -29,8 +29,6 @@ import (
 
 var (
 	dialAddress = flag.String("addr", "", "Address to connect to hologram server on.")
-	accessKey   = flag.String("access_key", "", "AWS Account access key for primary user")
-	secretKey   = flag.String("secret_key", "", "AWS Account secret key for primary user")
 	debugMode   = flag.Bool("debug", false, "Enable debug mode.")
 	configFile  = flag.String("conf", "/etc/hologram/agent.json", "Config file to load.")
 	config      Config
@@ -64,18 +62,10 @@ func main() {
 		log.Debug("Using command-line remote address.")
 		config.Host = *dialAddress
 	}
-	if *accessKey != "" {
-		log.Debug("Using command-line access key.")
-		config.AccessKey = *accessKey
-	}
-	if *secretKey != "" {
-		log.Debug("Using command-line secret key.")
-		config.SecretKey = *secretKey
-	}
 
 	// Emit the final config options for debugging if requested.
 	log.Debug("Final config:")
-	log.Debug("Hologram server address: %s, Access key: %s", config.Host, config.AccessKey)
+	log.Debug("Hologram server address: %s", config.Host)
 
 	defer func() {
 		log.Debug("Removing UNIX socket.")
@@ -104,13 +94,9 @@ func main() {
 	// Create a hologram client that can be used by other services to talk to the server
 	if config.Host != "" {
 		client = agent.NewClient(config.Host, credsManager)
-	} else if config.AccessKey != "" && config.SecretKey != "" {
-		client = agent.AccessKeyClient(config.AccessKey, config.SecretKey, credsManager)
 	} else {
-		log.Errorf("Failed to find either host or both access_key and secret_key inside config file.")
-		os.Exit(1)
+		client = agent.AccessKeyClient(credsManager)
 	}
-
 	agentServer := agent.NewCliHandler("/var/run/hologram.sock", client)
 	err = agentServer.Start()
 	if err != nil {

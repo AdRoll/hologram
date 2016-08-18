@@ -20,7 +20,6 @@ import (
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -50,9 +49,14 @@ type accessKeyClient struct {
 	cr          CredentialsReceiver
 }
 
-func AccessKeyClient(accessKey string, secretKey string, cr CredentialsReceiver) *accessKeyClient {
-	sts := sts.New(session.New(&aws.Config{Credentials: credentials.NewStaticCredentials(accessKey, secretKey, "")}))
-	iamconn := iam.New(session.New(&aws.Config{Credentials: credentials.NewStaticCredentials(accessKey, secretKey, "")}))
+func AccessKeyClient(cr CredentialsReceiver) *accessKeyClient {
+	config := aws.Config{}
+	sess, err := session.NewSession(&config)
+	if err != nil {
+		log.Errorf("Unable to load aws sdk session.  Err: %s", err)
+	}
+	sts := sts.New(sess)
+	iamconn := iam.New(sess)
 	iamUser, err := iamconn.GetUser(&iam.GetUserInput{})
 	if err != nil {
 		log.Errorf("Unable to get current user.  Err: %s", err)

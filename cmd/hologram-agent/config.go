@@ -18,6 +18,4 @@ Config represents the top-level configuration values required by the application
 */
 type Config struct {
 	Host      string `json:"host"`
-	AccessKey string `json:"accessKey"`
-	SecretKey string `json:"secretKey"`
 }
