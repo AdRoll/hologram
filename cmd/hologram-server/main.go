@@ -28,8 +28,9 @@ import (
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/server"
 	"github.com/AdRoll/hologram/transport/remote"
-	"github.com/goamz/goamz/aws"
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 )
@@ -173,13 +174,7 @@ func main() {
 	}
 
 	// Setup the server state machine that responds to requests.
-	auth, err := aws.GetAuth(os.Getenv("HOLOGRAM_AWSKEY"), os.Getenv("HOLOGRAM_AWSSECRET"), "", time.Now())
-	if err != nil {
-		log.Errorf("Error getting instance credentials: %s", err.Error())
-		os.Exit(1)
-	}
-
-	stsConnection := sts.New(auth, aws.Regions["us-east-1"])
+	stsConnection := sts.New(session.New(&aws.Config{}))
 	credentialsService := server.NewDirectSessionTokenService(config.AWS.Account, stsConnection)
 
 	open := func() (server.LDAPImplementation, error) { return ConnectLDAP(config.LDAP) }

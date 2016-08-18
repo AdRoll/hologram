@@ -28,9 +28,3 @@ logging
 -------
 
 All authentications, whether successful or not, can be logged to Amazon SimpleDB to provide an audit trail.
-
-
-MFA tokens
-----------
-
-Hologram Server supports IAM roles that require an MFA token, requesting the token from the Hologram Agent when needed.
