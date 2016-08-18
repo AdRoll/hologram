@@ -176,9 +176,6 @@ func (luc *ldapUserCache) _verify(username string, challenge []byte, sshSig *ssh
 	return nil, nil
 }
 
-/*
-
- */
 func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig *ssh.Signature) (
 	*User, error) {
 	// Loop through all of the keys and attempt verification.
@@ -216,4 +213,132 @@ func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr str
 
 	// Start updating the user cache.
 	return retCache, updateError
+}
+
+type KeysFile interface {
+	Search(string) (map[string]interface{}, error)
+	Load() error
+	Keys() (KeysMap, error)
+}
+
+/*
+   keysFileUserCache read the file that contains public ssh keys and user info
+   .
+*/
+type keysFileUserCache struct {
+	users             map[string]*User
+	stats             g2s.Statter
+	keysFile          KeysFile
+	userAttr          string
+	enableServerRoles bool
+	roleAttr          string
+	defaultRole       string
+	defaultRoleAttr   string
+}
+
+func (kfuc *keysFileUserCache) Update() error {
+	start := time.Now()
+
+	users := map[string]*User{}
+	seenRoles := map[[2]string]bool{}
+
+	err := kfuc.keysFile.Load() // Load keys from file
+	if err != nil {
+		return err
+	}
+	keys, _ := kfuc.keysFile.Keys()
+	for key, userData := range keys {
+		username := userData[kfuc.userAttr].(string)
+		defaultRole, ok := userData[kfuc.defaultRoleAttr].(string)
+		if !ok || defaultRole == "" {
+			defaultRole = kfuc.defaultRole
+		}
+		user, found := users[username]
+		if !found { // Create a new user in the cache if doesn't exist
+			user = &User{
+				Username:    username,
+				SSHKeys:     []ssh.PublicKey{},
+				ARNs:        []string{},
+				DefaultRole: defaultRole,
+			}
+		}
+
+		sshKeyBytes, _ := base64.StdEncoding.DecodeString(key)
+		sshKey, err := ssh.ParsePublicKey(sshKeyBytes)
+		if err != nil {
+            sshKey, _, _, _, err = ssh.ParseAuthorizedKey([]byte(key))
+            if err != nil {
+    			log.Warning("SSH key parsing for user %s failed (key was '%s')! This key will not be added into the keys file.", username, key)
+    			continue
+            }
+		}
+		user.SSHKeys = append(user.SSHKeys, sshKey)
+
+		roles := []string{}
+		if kfuc.enableServerRoles {
+			roles = userData[kfuc.roleAttr].([]string)
+			for _, role := range roles {
+				if seenRoles[[2]string{username, role}] {
+					continue
+				}
+				user.ARNs = append(user.ARNs, role)
+				seenRoles[[2]string{username, role}] = true
+			}
+		}
+
+		// Create/Update user
+		users[username] = user
+	}
+
+    kfuc.users = users
+
+	log.Debug("Keys file information re-cached.")
+	kfuc.stats.Timing(1.0, "keysFileCacheUpdate", time.Since(start))
+
+	return nil
+}
+
+func (kfuc *keysFileUserCache) Users() map[string]*User {
+	return kfuc.users
+}
+
+func (kfuc *keysFileUserCache) verify(challenge []byte, sshSig *ssh.Signature) (*User, error) {
+	for _, user := range kfuc.users {
+		for _, sshKey := range user.SSHKeys {
+			if err := sshKey.Verify(challenge, sshSig); err == nil {
+				return user, nil
+			}
+		}
+	}
+	return nil, nil
+}
+
+func (kfuc *keysFileUserCache) Authenticate(username string, challenge []byte, sshSig *ssh.Signature) (*User, error) {
+	user, _ := kfuc.verify(challenge, sshSig)
+
+	if user == nil {
+		log.Debug("Could not find %s in the keys file cache; updating from the file.", username)
+		kfuc.stats.Counter(1.0, "keysFileCacheMiss", 1)
+
+		// We should update keys file cache again to retry keys.
+		kfuc.Update()
+		return kfuc.verify(challenge, sshSig)
+	}
+	return user, nil
+}
+
+func NewKeysFileUserCache(keysFile KeysFile, stats g2s.Statter, enableServerRoles bool, userAttr string, roleAttr string, defaultRole string, defaultRoleAttr string) (*keysFileUserCache, error) {
+	kfuc := &keysFileUserCache{
+		users:             map[string]*User{},
+		stats:             stats,
+		keysFile:          keysFile,
+		userAttr:          userAttr,
+		enableServerRoles: enableServerRoles,
+		roleAttr:          roleAttr,
+		defaultRole:       defaultRole,
+		defaultRoleAttr:   defaultRoleAttr,
+	}
+
+	err := kfuc.Update()
+	return kfuc, err
 }
