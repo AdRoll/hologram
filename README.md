@@ -152,7 +152,7 @@ You will need to modify the Trusted Entities for each of these roles that you cr
 ### Serverless
 
 The hologram agent supports being run without a server, based on long-lived user credentials.  To use, instead of defining host in the config.json file, it uses the go sdk [default credentials provider](https://github.com/aws/aws-sdk-go/#configuring-credentials) on the hologram-agent.
-This can be done by adding environment variables to the launch daemon .plist, or setting credentials files for the root user.
+This can be done by adding environment variables to the launch daemon .plist, or set the HOME environment variable in the plist to the directory containing your `.aws` directory.
 
 The user must have permission to iam:GetUser on itself(resource "arn:aws:iam::ACCOUNT-ID-WITHOUT-HYPHENS:user/${aws:username}").  `hologram me` uses getsessiontoken from sts, which has some [limitations](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_getsessiontoken.html).  With assume role permissions, `hologram use <role>` will assume into any role bypassing those restrictions.
 
