@@ -149,6 +149,19 @@ You will need to modify the Trusted Entities for each of these roles that you cr
     }
 ```
 
+### Account Aliases
+The config files can set accountAliases, a dictionary from short name to account iam arn, `arn:aws:iam::ACCOUNT-ID-WITHOUT-HYPHENS`.  If you run `hologram use key/rolename`, it will expand it out to the full arn.  This config param is supported on both the server(org wide accounts), or client(individual accounts).
+
+```json
+{
+  "host":"localhost:3100",
+  "accountAliases":{
+    "dev":"arn:aws:iam::123456"
+  }
+}```
+
+With this config, `hologram use dev/service` would be equivalent to `hologram use arn:aws:iam::123456:role/service`
+
 ### Serverless
 
 The hologram agent supports being run without a server, based on long-lived user credentials.  To use, instead of defining host in the config.json file, it uses the go sdk [default credentials provider](https://github.com/aws/aws-sdk-go/#configuring-credentials) on the hologram-agent.
