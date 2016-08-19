@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/AdRoll/hologram/log"
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"strings"
 )
 
@@ -38,7 +38,7 @@ STSImplementation exists to enable dependency injection of an
 implementation of STS.
 */
 type STSImplementation interface {
-	AssumeRole(options *sts.AssumeRoleParams) (*sts.AssumeRoleResult, error)
+	AssumeRole(options *sts.AssumeRoleInput) (*sts.AssumeRoleOutput, error)
 }
 
 /*
@@ -99,10 +99,11 @@ func (s *directSessionTokenService) AssumeRole(user *User, role string, enableSe
 		}
 	}
 	log.Debug("User: %s", user.Username)
-	options := &sts.AssumeRoleParams{
-		DurationSeconds: 3600, // the maximum allowed for AssumeRole
-		RoleArn:         arn,
-		RoleSessionName: user.Username,
+	duration := int64(3600)
+	options := &sts.AssumeRoleInput{
+		DurationSeconds: &duration,
+		RoleArn:         &arn,
+		RoleSessionName: &user.Username,
 	}
 
 	r, err := s.sts.AssumeRole(options)
@@ -110,5 +111,5 @@ func (s *directSessionTokenService) AssumeRole(user *User, role string, enableSe
 		log.Debug("Error!! %s", err.Error())
 		return nil, err
 	}
-	return &r.Credentials, nil
+	return r.Credentials, nil
 }

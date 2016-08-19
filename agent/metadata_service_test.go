@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/service/sts"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -42,11 +42,16 @@ func TestMetadataService(t *testing.T) {
 			Port: 0,
 		})
 
+		accessKey := "access_key"
+		secretKey := "secret"
+		token := "token"
+		expiration := time.Date(2014, 10, 22, 12, 21, 17, 00, time.UTC)
 		dummyCreds := &dummyCredentialsSource{creds: &sts.Credentials{
-			AccessKeyId:     "access_key",
-			SessionToken:    "token",
-			SecretAccessKey: "secret",
-			Expiration:      time.Date(2014, 10, 22, 12, 21, 17, 00, time.UTC)}}
+			AccessKeyId:     &accessKey,
+			SecretAccessKey: &secretKey,
+			SessionToken:    &token,
+			Expiration:      &expiration,
+		}}
 
 		service, err := NewMetadataService(testListener, dummyCreds)
 

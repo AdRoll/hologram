@@ -19,7 +19,7 @@ import (
 
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/service/sts"
 	. "github.com/smartystreets/goconvey/convey"
 )
 

@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/service/sts"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -39,13 +39,16 @@ func (d *dummyClient2) GetUserCredentials() error {
 func TestCredentialsExpirationManager(t *testing.T) {
 	Convey("TestCredentialsExpirationManager", t, func() {
 		c := &dummyClient2{}
-
+		key := "derp"
+		expiredExpiration := time.Now().Add(-time.Duration(1 * time.Hour))
+		currentExpiration := time.Now()
 		credsManager := NewCredentialsExpirationManager()
 		credsManager.SetClient(c)
 
 		Convey("Valid credentials are returned", func() {
 			creds := sts.Credentials{
-				AccessKeyId: "derp",
+				AccessKeyId: &key,
+				Expiration:  &currentExpiration,
 			}
 			credsManager.SetCredentials(&creds, "")
 
@@ -56,8 +59,8 @@ func TestCredentialsExpirationManager(t *testing.T) {
 
 		Convey("Old credentials are refreshed", func() {
 			creds := sts.Credentials{
-				AccessKeyId: "derp",
-				Expiration:  time.Now().Add(-time.Duration(1 * time.Hour)),
+				AccessKeyId: &key,
+				Expiration:  &expiredExpiration,
 			}
 			credsManager.SetCredentials(&creds, "")
 
@@ -68,8 +71,8 @@ func TestCredentialsExpirationManager(t *testing.T) {
 
 		Convey("Old credentials from AssumeRole are refreshed", func() {
 			creds := sts.Credentials{
-				AccessKeyId: "derp",
-				Expiration:  time.Now().Add(-time.Duration(5 * time.Minute)),
+				AccessKeyId: &key,
+				Expiration:  &expiredExpiration,
 			}
 			credsManager.SetCredentials(&creds, "role")
 
