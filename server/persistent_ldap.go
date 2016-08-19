@@ -1,12 +1,17 @@
 package server
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/nmcclain/ldap"
 )
 
 type persistentLDAP struct {
-	open func() (LDAPImplementation, error)
-	conn LDAPImplementation
+	open     func() (LDAPImplementation, error)
+	conn     LDAPImplementation
+	baseDN   string
+	userAttr string
 }
 
 func (pl *persistentLDAP) Refresh() error {
@@ -28,6 +33,28 @@ func (pl *persistentLDAP) Search(searchRequest *ldap.SearchRequest) (*ldap.Searc
 	}
 }
 
+func (pl *persistentLDAP) SearchUser(userData map[string]string) (map[string]interface{}, error) {
+	sr := ldap.NewSearchRequest(
+		pl.baseDN,
+		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
+		fmt.Sprintf("(%s=%s)", pl.userAttr, userData["username"]),
+		[]string{"sshPublicKey", pl.userAttr, "userPassword"},
+		nil)
+	r, err := pl.Search(sr)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(r.Entries) == 0 {
+		return nil, errors.New(fmt.Sprintf("User %s not found!", userData["username"]))
+	}
+
+	return map[string]interface{}{
+		"password":      r.Entries[0].GetAttributeValue("userPassword"),
+		"sshPublicKeys": r.Entries[0].GetAttributeValues("sshPublicKey"),
+	}, nil
+}
+
 func (pl *persistentLDAP) Modify(modifyRequest *ldap.ModifyRequest) error {
 	if err := pl.conn.Modify(modifyRequest); err != nil && err.(*ldap.Error).ResultCode == ldap.ErrorNetwork {
 		pl.Refresh()
@@ -35,6 +62,12 @@ func (pl *persistentLDAP) Modify(modifyRequest *ldap.ModifyRequest) error {
 	} else {
 		return err
 	}
+}
+
+func (pl *persistentLDAP) ModifyUser(data map[string]string) error {
+	mr := ldap.NewModifyRequest(data["DN"])
+	mr.Add("sshPublicKey", []string{data["sshPublicKey"]})
+	return pl.Modify(mr)
 }
 
 func NewPersistentLDAP(open func() (LDAPImplementation, error)) (LDAPImplementation, error) {

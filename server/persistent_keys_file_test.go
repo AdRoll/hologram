@@ -9,8 +9,8 @@ import (
 
 func TestPersistentKeysFile(t *testing.T) {
 	data := `{
-        "KEY1": {"username": "user1", "roles": ["role1", "role11"]},
-        "KEY2": {"username": "user2", "roles": ["role2", "role22"]}
+        "KEY1": {"username": "user1", "password": "pass1", "roles": ["role1", "role11"]},
+        "KEY2": {"username": "user2", "password": "pass2", "roles": ["role2", "role22"]}
     }`
 
 	open := func() ([]byte, error) {
@@ -23,30 +23,30 @@ func TestPersistentKeysFile(t *testing.T) {
 
 	Convey("Given data from keys file", t, func() {
 		Convey("Content from file should be loaded correctly", func() {
-			pkf := server.NewPersistentKeysFile(open, dump)
+			pkf := server.NewPersistentKeysFile(open, dump, "username", "roles")
 			err := pkf.Load()
 			So(err, ShouldBeNil)
 		})
 
 		Convey("An existing key in file should be found", func() {
-			pkf := server.NewPersistentKeysFile(open, dump)
+			pkf := server.NewPersistentKeysFile(open, dump, "username", "roles")
 
 			expected := map[string]interface{}{
-				"username": "user1",
-				"roles":    []interface{}{"role1", "role11"},
+				"username":      "user1",
+				"sshPublicKeys": []string{"KEY1"},
+				"password":      "pass1",
 			}
-			actual, err := pkf.Search("KEY1")
+			actual, err := pkf.Search("user1")
 			So(err, ShouldBeNil)
-			So(expected, ShouldResemble, actual)
+			So(actual, ShouldResemble, expected)
 		})
 
 		Convey("An non existing key in file shouldn't be found", func() {
-			pkf := server.NewPersistentKeysFile(open, dump)
+			pkf := server.NewPersistentKeysFile(open, dump, "username", "roles")
 
-			var expected map[string]interface{}
-			actual, err := pkf.Search("MISSING_KEY")
-			So(err, ShouldBeNil)
-			So(expected, ShouldResemble, actual)
+			user, err := pkf.Search("missing user")
+			So(err, ShouldNotBeNil)
+			So(user, ShouldBeNil)
 		})
 	})
 }

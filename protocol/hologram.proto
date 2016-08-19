@@ -51,7 +51,7 @@ message ServerRequest {
 		SSHChallengeResponse challengeResponse = 5;
 		MFATokenResponse tokenResponse = 6;
 		GetUserCredentials getUserCredentials = 7;
-    AddSSHKey addSSHkey = 8;
+        AddSSHKey addSSHkey = 8;
 	}
 }
 

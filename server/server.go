@@ -23,7 +23,6 @@ import (
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	"golang.org/x/crypto/ssh"
 )
@@ -37,16 +36,21 @@ server is a wrapper for all of the connection and message
 handlers that this server implements.
 */
 type server struct {
-	authenticator   Authenticator
-	userCache       UserCache
-	credentials     CredentialService
-	stats           g2s.Statter
-	defaultRole     string
-	ldapServer      LDAPImplementation
-	userAttr        string
-	baseDN          string
+	authenticator     Authenticator
+	userCache         UserCache
+	credentials       CredentialService
+	stats             g2s.Statter
+	defaultRole       string
+	userStorage       userStorage
+	userAttr          string
+	baseDN            string
 	enableServerRoles bool
-	defaultRoleAttr string
+	defaultRoleAttr   string
+}
+
+type userStorage interface {
+	SearchUser(map[string]string) (map[string]interface{}, error)
+	ModifyUser(map[string]string) error
 }
 
 /*
@@ -169,35 +173,29 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		}
 	} else if addSSHKeyMsg := r.GetAddSSHkey(); addSSHKeyMsg != nil {
 		sm.stats.Counter(1.0, "messages.addSSHKeyMsg", 1)
-
 		// Search for the user specified in this request.
-		sr := ldap.NewSearchRequest(
-			sm.baseDN,
-			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
-			fmt.Sprintf("(%s=%s)", sm.userAttr, addSSHKeyMsg.GetUsername()),
-			[]string{"sshPublicKey", sm.userAttr, "userPassword"},
-			nil)
-
-		user, err := sm.ldapServer.Search(sr)
+		userData := map[string]string{
+			"username": addSSHKeyMsg.GetUsername(),
+		}
+		resp, err := sm.userStorage.SearchUser(userData)
 		if err != nil {
 			log.Errorf("Error trying to handle addSSHKeyMsg: %s", err.Error())
 			return
 		}
 
-		if len(user.Entries) == 0 {
-			log.Errorf("User %s not found!", addSSHKeyMsg.GetUsername())
-			return
-		}
-
 		// Check their password.
-		password := user.Entries[0].GetAttributeValue("userPassword")
-		if password != addSSHKeyMsg.GetPasswordhash() {
+		password := resp["password"]
+		passwordHash, _ := password.(string)
+		if passwordHash != addSSHKeyMsg.GetPasswordhash() {
 			log.Errorf("Provided password for user %s does not match %s!", addSSHKeyMsg.GetUsername(), password)
 			return
 		}
 
+		sshKeys := resp["sshPublicKeys"]
+		sshPublicKeys, _ := sshKeys.([]string)
+
 		// Check to see if this SSH key already exists.
-		for _, k := range user.Entries[0].GetAttributeValues("sshPublicKey") {
+		for _, k := range sshPublicKeys {
 			if k == addSSHKeyMsg.GetSshkeybytes() {
 				log.Warning("User %s already has this SSH key. Doing nothing.", addSSHKeyMsg.GetUsername())
 				successMsg := &protocol.Message{Success: &protocol.Success{}}
@@ -206,11 +204,15 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 			}
 		}
 
-		mr := ldap.NewModifyRequest(user.Entries[0].DN)
-		mr.Add("sshPublicKey", []string{addSSHKeyMsg.GetSshkeybytes()})
-		err = sm.ldapServer.Modify(mr)
+		modifyData := map[string]string{}
+		for k, v := range resp {
+			strVal, _ := v.(string)
+			modifyData[k] = strVal
+		}
+		modifyData["sshPublicKey"] = addSSHKeyMsg.GetSshkeybytes()
+		err = sm.userStorage.ModifyUser(modifyData)
 		if err != nil {
-			log.Errorf("Could not modify LDAP user: %s", err.Error())
+			log.Errorf("Could not modify user: %s", err.Error())
 			return
 		}
 
@@ -307,21 +309,21 @@ func New(userCache UserCache,
 	credentials CredentialService,
 	defaultRole string,
 	stats g2s.Statter,
-	ldapServer LDAPImplementation,
+	userStorage userStorage,
 	userAttr string,
 	baseDN string,
 	enableServerRoles bool,
 	defaultRoleAttr string) *server {
 	return &server{
-		credentials:     credentials,
-		authenticator:   userCache,
-		userCache:       userCache,
-		defaultRole:     defaultRole,
-		stats:           stats,
-		ldapServer:      ldapServer,
-		userAttr:        userAttr,
-		baseDN:          baseDN,
+		credentials:       credentials,
+		authenticator:     userCache,
+		userCache:         userCache,
+		defaultRole:       defaultRole,
+		stats:             stats,
+		userStorage:       userStorage,
+		userAttr:          userAttr,
+		baseDN:            baseDN,
 		enableServerRoles: enableServerRoles,
-		defaultRoleAttr: defaultRoleAttr,
+		defaultRoleAttr:   defaultRoleAttr,
 	}
 }

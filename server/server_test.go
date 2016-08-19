@@ -119,11 +119,23 @@ func (l *DummyLDAP) Search(*ldap.SearchRequest) (*ldap.SearchResult, error) {
 	}, nil
 }
 
+func (l *DummyLDAP) SearchUser(userData map[string]string) (map[string]interface{}, error) {
+	r, _ := l.Search(nil)
+	return map[string]interface{}{
+		"password":      r.Entries[0].GetAttributeValue("userPassword"),
+		"sshPublicKeys": r.Entries[0].GetAttributeValues("sshPublicKey"),
+	}, nil
+}
+
 func (l *DummyLDAP) Modify(mr *ldap.ModifyRequest) error {
 	if reflect.DeepEqual(mr, l.req) {
 		l.sshKeys = []string{"test"}
 	}
 	return nil
+}
+
+func (l *DummyLDAP) ModifyUser(data map[string]string) error {
+	return l.Modify(l.req)
 }
 
 func TestServerStateMachine(t *testing.T) {
