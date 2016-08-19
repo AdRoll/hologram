@@ -71,14 +71,16 @@ func main() {
 		ldapBindPassword = flag.String("ldapBindPassword", "", "LDAP password for bind.")
 		statsdHost       = flag.String("statsHost", "", "Address to send statsd metrics to.")
 		iamAccount       = flag.String("iamaccount", "", "AWS Account ID for generating IAM Role ARNs")
-		enableLDAPRoles  = flag.Bool("ldaproles", false, "Enable role support using LDAP directory.")
-		roleAttribute    = flag.String("roleattribute", "", "Group attribute to get role from.")
-		defaultRoleAttr  = flag.String("defaultroleattr", "", "User attribute to check to determine a user's default role.")
-		defaultRole      = flag.String("role", "", "AWS role to assume by default.")
-		configFile       = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
-		cacheTimeout     = flag.Int("cachetime", 3600, "Time in seconds after which to refresh LDAP user cache.")
-		debugMode        = flag.Bool("debug", false, "Enable debug mode.")
-		config           Config
+		// Still here for backwards compatibility
+		enableLDAPRoles   = flag.Bool("ldaproles", false, "Enable role support using LDAP directory (DEPRECATED: Use enableServerRoles instead).")
+		enableServerRoles = flag.Bool("serverRoles", false, "Enable role support using server directory.")
+		roleAttribute     = flag.String("roleattribute", "", "Group attribute to get role from.")
+		defaultRoleAttr   = flag.String("defaultroleattr", "", "User attribute to check to determine a user's default role.")
+		defaultRole       = flag.String("role", "", "AWS role to assume by default.")
+		configFile        = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
+		cacheTimeout      = flag.Int("cachetime", 3600, "Time in seconds after which to refresh LDAP user cache.")
+		debugMode         = flag.Bool("debug", false, "Enable debug mode.")
+		config            Config
 	)
 
 	flag.Parse()
@@ -136,8 +138,12 @@ func main() {
 		config.AWS.DefaultRole = *defaultRole
 	}
 
-	if *enableLDAPRoles {
+	if *enableServerRoles || *enableLDAPRoles {
 		config.LDAP.EnableLDAPRoles = true
+	}
+
+	if config.LDAP.EnableLDAPRoles || *enableLDAPRoles {
+		config.EnableServerRoles = true
 	}
 
 	if *defaultRoleAttr != "" {
@@ -189,13 +195,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr)
+	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN, config.EnableServerRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr)
 	if err != nil {
 		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
 		os.Exit(1)
 	}
 
-	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.DefaultRoleAttr)
+	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer, config.LDAP.UserAttr, config.LDAP.BaseDN, config.EnableServerRoles, config.LDAP.DefaultRoleAttr)
 	server, err := remote.NewServer(config.Listen, serverHandler.HandleConnection)
 
 	// Wait for a signal from the OS to shutdown.

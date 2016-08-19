@@ -45,7 +45,7 @@ type server struct {
 	ldapServer      LDAPImplementation
 	userAttr        string
 	baseDN          string
-	enableLDAPRoles bool
+	enableServerRoles bool
 	defaultRoleAttr string
 }
 
@@ -111,11 +111,11 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		}
 
 		if user != nil {
-			creds, err := sm.credentials.AssumeRole(user, role, sm.enableLDAPRoles)
+			creds, err := sm.credentials.AssumeRole(user, role, sm.enableServerRoles)
 			if err != nil {
 				// Update user cache and try again
 				sm.userCache.Update()
-				creds, err := sm.credentials.AssumeRole(user, role, sm.enableLDAPRoles)
+				creds, err := sm.credentials.AssumeRole(user, role, sm.enableServerRoles)
 
 				if err != nil {
 					// error message from Amazon, so forward that on to the client
@@ -128,7 +128,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 					sm.stats.Counter(1.0, "errors.assumeRole", 1)
 
 					// Attempt to use the default role to fall back
-					creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
+					creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableServerRoles)
 					if err == nil {
 						m.Write(makeCredsResponse(creds))
 					}
@@ -148,12 +148,12 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		}
 
 		if user != nil {
-			creds, err := sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
+			creds, err := sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableServerRoles)
 			if err != nil {
 				log.Errorf("Error trying to handle GetUserCredentials: %s", err.Error())
 				// Update user cache and try again
 				sm.userCache.Update()
-				creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
+				creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableServerRoles)
 				if err != nil {
 					errStr := fmt.Sprintf("Could not get user credentials. %s may not have been given Hologram access yet.", user.Username)
 					errMsg := &protocol.Message{
@@ -310,7 +310,7 @@ func New(userCache UserCache,
 	ldapServer LDAPImplementation,
 	userAttr string,
 	baseDN string,
-	enableLDAPRoles bool,
+	enableServerRoles bool,
 	defaultRoleAttr string) *server {
 	return &server{
 		credentials:     credentials,
@@ -321,7 +321,7 @@ func New(userCache UserCache,
 		ldapServer:      ldapServer,
 		userAttr:        userAttr,
 		baseDN:          baseDN,
-		enableLDAPRoles: enableLDAPRoles,
+		enableServerRoles: enableServerRoles,
 		defaultRoleAttr: defaultRoleAttr,
 	}
 }

@@ -30,7 +30,7 @@ credentials to calling processes. No caching is done of these
 results other than that which the CredentialService does itself.
 */
 type CredentialService interface {
-	AssumeRole(user *User, role string, enableLDAPRoles bool) (*sts.Credentials, error)
+	AssumeRole(user *User, role string, enableServerRoles bool) (*sts.Credentials, error)
 }
 
 /*
@@ -77,12 +77,12 @@ func (s *directSessionTokenService) buildARN(role string) string {
 	return arn
 }
 
-func (s *directSessionTokenService) AssumeRole(user *User, role string, enableLDAPRoles bool) (*sts.Credentials, error) {
+func (s *directSessionTokenService) AssumeRole(user *User, role string, enableServerRoles bool) (*sts.Credentials, error) {
 	var arn string = s.buildARN(role)
 
 	log.Debug("Checking ARN %s against user %s (with access %s)", arn, user.Username, user.ARNs)
 
-	if enableLDAPRoles {
+	if enableServerRoles {
 		found := false
 		for _, a := range user.ARNs {
 			a = s.buildARN(a)

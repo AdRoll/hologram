@@ -72,7 +72,7 @@ func (*dummyCredentials) GetSessionToken(user *server.User) (*sts.Credentials, e
 	}, nil
 }
 
-func (*dummyCredentials) AssumeRole(user *server.User, role string, enableLDAPRoles bool) (*sts.Credentials, error) {
+func (*dummyCredentials) AssumeRole(user *server.User, role string, enableServerRoles bool) (*sts.Credentials, error) {
 	return &sts.Credentials{
 		AccessKeyId:     "access_key",
 		SecretAccessKey: "secret",

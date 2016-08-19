@@ -56,16 +56,16 @@ type LDAPImplementation interface {
 ldapUserCache connects to LDAP and pulls user settings from it.
 */
 type ldapUserCache struct {
-	users           map[string]*User
-	groups          map[string][]string
-	server          LDAPImplementation
-	stats           g2s.Statter
-	userAttr        string
-	baseDN          string
-	enableLDAPRoles bool
-	roleAttribute   string
-	defaultRole     string
-	defaultRoleAttr string
+	users             map[string]*User
+	groups            map[string][]string
+	server            LDAPImplementation
+	stats             g2s.Statter
+	userAttr          string
+	baseDN            string
+	enableServerRoles bool
+	roleAttribute     string
+	defaultRole       string
+	defaultRoleAttr   string
 }
 
 /*
@@ -77,7 +77,7 @@ been recently added to LDAP work, instead of requiring a server restart.
 */
 func (luc *ldapUserCache) Update() error {
 	start := time.Now()
-	if luc.enableLDAPRoles {
+	if luc.enableServerRoles {
 		groupSearchRequest := ldap.NewSearchRequest(
 			luc.baseDN,
 			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
@@ -132,7 +132,7 @@ func (luc *ldapUserCache) Update() error {
 
 		userDefaultRole := luc.defaultRole
 		arns := []string{}
-		if luc.enableLDAPRoles {
+		if luc.enableServerRoles {
 			userDefaultRole = entry.GetAttributeValue(luc.defaultRoleAttr)
 			if userDefaultRole == "" {
 				userDefaultRole = luc.defaultRole
@@ -195,18 +195,18 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 /*
 	NewLDAPUserCache returns a properly-configured LDAP cache.
 */
-func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string) (*ldapUserCache, error) {
+func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableServerRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string) (*ldapUserCache, error) {
 	retCache := &ldapUserCache{
-		users:           map[string]*User{},
-		groups:          map[string][]string{},
-		server:          server,
-		stats:           stats,
-		userAttr:        userAttr,
-		baseDN:          baseDN,
-		enableLDAPRoles: enableLDAPRoles,
-		roleAttribute:   roleAttribute,
-		defaultRole:     defaultRole,
-		defaultRoleAttr: defaultRoleAttr,
+		users:             map[string]*User{},
+		groups:            map[string][]string{},
+		server:            server,
+		stats:             stats,
+		userAttr:          userAttr,
+		baseDN:            baseDN,
+		enableServerRoles: enableServerRoles,
+		roleAttribute:     roleAttribute,
+		defaultRole:       defaultRole,
+		defaultRoleAttr:   defaultRoleAttr,
 	}
 
 	updateError := retCache.Update()
@@ -266,11 +266,11 @@ func (kfuc *keysFileUserCache) Update() error {
 		sshKeyBytes, _ := base64.StdEncoding.DecodeString(key)
 		sshKey, err := ssh.ParsePublicKey(sshKeyBytes)
 		if err != nil {
-            sshKey, _, _, _, err = ssh.ParseAuthorizedKey([]byte(key))
-            if err != nil {
-    			log.Warning("SSH key parsing for user %s failed (key was '%s')! This key will not be added into the keys file.", username, key)
-    			continue
-            }
+			sshKey, _, _, _, err = ssh.ParseAuthorizedKey([]byte(key))
+			if err != nil {
+				log.Warning("SSH key parsing for user %s failed (key was '%s')! This key will not be added into the keys file.", username, key)
+				continue
+			}
 		}
 		user.SSHKeys = append(user.SSHKeys, sshKey)
 
@@ -290,7 +290,7 @@ func (kfuc *keysFileUserCache) Update() error {
 		users[username] = user
 	}
 
-    kfuc.users = users
+	kfuc.users = users
 
 	log.Debug("Keys file information re-cached.")
 	kfuc.stats.Timing(1.0, "keysFileCacheUpdate", time.Since(start))

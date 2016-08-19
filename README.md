@@ -136,7 +136,7 @@ The role of the hologram server must have assume role permissions.  See permissi
 
 For different projects it is recommended that you create IAM roles for each and have your developers assume these roles for testing the software. Hologram supports a command `hologram use <rolename>` which will fetch temporary credentials for this role instead of the default developer one until it is reset or another role is assumed.
 
-You will need to modify the Trusted Entities for each of these roles that you create so that the IAM instance profile you created for the Hologram Server can access them. The hologram user must have permission to assume that role. 
+You will need to modify the Trusted Entities for each of these roles that you create so that the IAM instance profile you created for the Hologram Server can access them. The hologram user must have permission to assume that role.
 
 ```json
     {
@@ -151,7 +151,7 @@ You will need to modify the Trusted Entities for each of these roles that you cr
 
 ### LDAP Based Roles
 
-Hologram supports assigning roles based on a user's LDAP group. Roles can be turned on by setting the `enableLDAPRoles` key to `true` in `config/server.json`.
+Hologram supports assigning roles based on a user's LDAP group. Roles can be turned on by setting the `enableServerRoles` key to `true` in `config/server.json`.
 
 An LDAP group attribute will have to be chosen for user roles. By default `businessCategory` is chosen for this role since it is part of the core LDAP schema. The attribute used can be modified by editing the `roleAttribute` key in `config/server.json`. The value of this attribute should be the name of the group's role in AWS.
 
