@@ -166,6 +166,9 @@ func (c *client) GetUserCredentials() error {
 }
 
 func (c *client) requestCredentials(req *protocol.ServerRequest, role string) error {
+
+  log.Errorf("Got role: %s", role)
+
 	conn, err := remote.NewClient(c.connectionString)
 	if err != nil {
 		return err

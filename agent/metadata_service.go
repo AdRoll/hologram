@@ -95,7 +95,12 @@ Enumerates the available instance profiles on this fake instance.
 Seems like Amazon only supports one.
 */
 func (mds *metadataService) enumerateRoles(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "hologram-access")
+  //fmt.Fprint(w, r.URL.Query());
+  queryParams := r.URL.Query()
+  if role, ok := queryParams["role"]; ok {
+    fmt.Fprint(w, role[0])
+  }
+  //fmt.Fprint(w, r.URL.Query()["role"][0])
 }
 
 /*
@@ -125,8 +130,14 @@ func (mds *metadataService) getPublicDNS(w http.ResponseWriter, r *http.Request)
 Returns credentials for interested clients.
 */
 func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Request) {
+  queryParams := r.URL.Query()
+  if roles, ok := queryParams["role"]; ok {
+    fmt.Fprint(w, roles[0])
+  }
+
 	creds, err := mds.creds.GetCredentials()
 	if err != nil {
+    fmt.Fprint(w, "error getting credentials!")
 		w.WriteHeader(500)
 		fmt.Fprint(w, err.Error())
 		return
