@@ -12,7 +12,7 @@ import (
 // A server that fails after every call to Search/Modify!
 type FallibleLDAPServer struct {
 	underlying *StubLDAPServer
-	dead bool
+	dead       bool
 }
 
 func (fls *FallibleLDAPServer) Search(s *ldap.SearchRequest) (*ldap.SearchResult, error) {
@@ -30,7 +30,6 @@ func (fls *FallibleLDAPServer) Modify(m *ldap.ModifyRequest) error {
 	fls.dead = true
 	return fls.underlying.Modify(m)
 }
-
 
 func TestPersistentLDAP(t *testing.T) {
 	connWillFail := false
@@ -59,7 +58,7 @@ func TestPersistentLDAP(t *testing.T) {
 			expected, err := s.Search(nil)
 			So(err, ShouldBeNil)
 			actual, err := ldapServer.Search(nil)
-			So(err,      ShouldBeNil)
+			So(err, ShouldBeNil)
 			So(expected, ShouldResemble, actual)
 		})
 
@@ -67,7 +66,7 @@ func TestPersistentLDAP(t *testing.T) {
 			expected, err := s.Search(nil)
 			So(err, ShouldBeNil)
 			actual, err := ldapServer.Search(nil)
-			So(err,      ShouldBeNil)
+			So(err, ShouldBeNil)
 			So(expected, ShouldResemble, actual)
 		})
 
@@ -81,7 +80,7 @@ func TestPersistentLDAP(t *testing.T) {
 
 	Convey("An initially broken connection to an LDAP server should fail fast", t, func() {
 		ldapServer, err = server.NewPersistentLDAP(open)
-		So(err,        ShouldNotBeNil)
+		So(err, ShouldNotBeNil)
 		So(ldapServer, ShouldBeNil)
 	})
 }

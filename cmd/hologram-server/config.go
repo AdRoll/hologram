@@ -27,9 +27,18 @@ type LDAP struct {
 	DefaultRoleAttr string `json:"defaultroleattr"`
 }
 
+type KeysFile struct {
+	filePath        string `json:"filepath"`
+	UserAttr        string `json:"userattr"`
+	RoleAttr        string `json:"roleattr"`
+	DefaultRoleAttr string `json:"defaultroleattr"`
+}
+
 type Config struct {
-	LDAP LDAP `json:"ldap"`
-	AWS  struct {
+	UserStorage string   `json:"userstorage"`
+	LDAP        LDAP     `json:"ldap"`
+	KeysFile    KeysFile `json:"keysfile"`
+	AWS         struct {
 		Account     string `json:"account"`
 		DefaultRole string `json:"defaultrole"`
 	} `json:"aws"`

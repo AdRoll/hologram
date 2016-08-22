@@ -41,14 +41,11 @@ type server struct {
 	credentials       CredentialService
 	stats             g2s.Statter
 	defaultRole       string
-	userStorage       userStorage
-	userAttr          string
-	baseDN            string
+	userStorage       UserStorage
 	enableServerRoles bool
-	defaultRoleAttr   string
 }
 
-type userStorage interface {
+type UserStorage interface {
 	SearchUser(map[string]string) (map[string]interface{}, error)
 	ModifyUser(map[string]string) error
 }
@@ -309,11 +306,8 @@ func New(userCache UserCache,
 	credentials CredentialService,
 	defaultRole string,
 	stats g2s.Statter,
-	userStorage userStorage,
-	userAttr string,
-	baseDN string,
-	enableServerRoles bool,
-	defaultRoleAttr string) *server {
+	userStorage UserStorage,
+	enableServerRoles bool) *server {
 	return &server{
 		credentials:       credentials,
 		authenticator:     userCache,
@@ -321,9 +315,6 @@ func New(userCache UserCache,
 		defaultRole:       defaultRole,
 		stats:             stats,
 		userStorage:       userStorage,
-		userAttr:          userAttr,
-		baseDN:            baseDN,
 		enableServerRoles: enableServerRoles,
-		defaultRoleAttr:   defaultRoleAttr,
 	}
 }

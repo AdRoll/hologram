@@ -93,6 +93,6 @@ func (pkf *persistentKeysFile) Modify(username, sshPublicKey string) error {
 	return pkf.dump(keysBytes) // Dump contents of keys
 }
 
-func NewPersistentKeysFile(open func() ([]byte, error), dump func([]byte) error, userAttr, roleAttr string) *persistentKeysFile {
+func NewPersistentKeysFile(open func() ([]byte, error), dump func([]byte) error, userAttr, roleAttr string) KeysFile {
 	return &persistentKeysFile{open: open, dump: dump, userAttr: userAttr, roleAttr: roleAttr}
 }
