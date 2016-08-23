@@ -28,7 +28,7 @@ type LDAP struct {
 }
 
 type KeysFile struct {
-	filePath        string `json:"filepath"`
+	FilePath        string `json:"filepath"`
 	UserAttr        string `json:"userattr"`
 	RoleAttr        string `json:"roleattr"`
 	DefaultRoleAttr string `json:"defaultroleattr"`

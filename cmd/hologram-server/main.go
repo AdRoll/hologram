@@ -218,9 +218,9 @@ func main() {
 			os.Exit(1)
 		}
 	} else if config.UserStorage == FileUserStorage {
-		open := func() ([]byte, error) { return ioutil.ReadFile(config.KeysFile.filePath) }
+		open := func() ([]byte, error) { return ioutil.ReadFile(config.KeysFile.FilePath) }
 		dump := func(data []byte) error {
-			return ioutil.WriteFile(config.KeysFile.filePath, data, os.FileMode(500))
+			return ioutil.WriteFile(config.KeysFile.FilePath, data, os.FileMode(500))
 		}
 		userStorageImpl := server.NewPersistentKeysFile(open, dump, config.KeysFile.UserAttr, config.KeysFile.RoleAttr)
 		userCache, _ = server.NewKeysFileUserCache(userStorageImpl, stats, config.EnableServerRoles, config.KeysFile.UserAttr, config.KeysFile.RoleAttr, config.AWS.DefaultRole, config.KeysFile.DefaultRoleAttr)
@@ -263,10 +263,12 @@ WaitForTermination:
 			log.DebugMode(false)
 		case <-reloadCacheSigHup:
 			log.Info("Force-reloading user cache.")
-			userCache.Update()
+			err := userCache.Update()
+			log.Errorf("Error while updating cache: %s", err.Error())
 		case <-cacheTimeoutTicker.C:
-			log.Info("Cache timeout. Reloading user cache.")
-			userCache.Update()
+			err := userCache.Update()
+			log.Errorf("Error while updating cache: %s", err.Error())
+
 		}
 	}
 

@@ -186,7 +186,10 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 		luc.stats.Counter(1.0, "ldapCacheMiss", 1)
 
 		// We should update LDAP cache again to retry keys.
-		luc.Update()
+		err := luc.Update()
+		if err != nil {
+			return nil, err
+		}
 		return luc._verify(username, challenge, sshSig)
 	}
 	return retUser, nil
@@ -246,7 +249,12 @@ func (kfuc *keysFileUserCache) Update() error {
 	if err != nil {
 		return err
 	}
-	keys, _ := kfuc.keysFile.Keys()
+	keys, err := kfuc.keysFile.Keys()
+
+	if err != nil {
+		return err
+	}
+
 	for key, userData := range keys {
 		username := userData[kfuc.userAttr].(string)
 		defaultRole, ok := userData[kfuc.defaultRoleAttr].(string)
@@ -274,10 +282,10 @@ func (kfuc *keysFileUserCache) Update() error {
 		}
 		user.SSHKeys = append(user.SSHKeys, sshKey)
 
-		roles := []string{}
 		if kfuc.enableServerRoles {
-			roles = userData[kfuc.roleAttr].([]string)
-			for _, role := range roles {
+			roles := userData[kfuc.roleAttr].([]interface{})
+			for _, r := range roles {
+				role := r.(string)
 				if seenRoles[[2]string{username, role}] {
 					continue
 				}
@@ -321,7 +329,10 @@ func (kfuc *keysFileUserCache) Authenticate(username string, challenge []byte, s
 		kfuc.stats.Counter(1.0, "keysFileCacheMiss", 1)
 
 		// We should update keys file cache again to retry keys.
-		kfuc.Update()
+		err := kfuc.Update()
+		if err != nil {
+			return nil, err
+		}
 		return kfuc.verify(challenge, sshSig)
 	}
 	return user, nil

@@ -153,7 +153,11 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 			if err != nil {
 				log.Errorf("Error trying to handle GetUserCredentials: %s", err.Error())
 				// Update user cache and try again
-				sm.userCache.Update()
+				err := sm.userCache.Update()
+				if err != nil {
+					log.Errorf("Error trying to update cache: %s", err.Error())
+					return
+				}
 				creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableServerRoles)
 				if err != nil {
 					errStr := fmt.Sprintf("Could not get user credentials. %s may not have been given Hologram access yet.", user.Username)
