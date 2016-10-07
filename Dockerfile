@@ -1,4 +1,4 @@
-FROM golang:1.4
+FROM golang:1.7.1
 
 # Copied straight from the golang:1.4-cross Dockerfile, but reducing the number of platforms
 RUN cd /usr/src/go/src \
