@@ -18,22 +18,32 @@ type LDAP struct {
 		DN       string `json:"dn"`
 		Password string `json:"password"`
 	} `json:"bind"`
-	UserAttr     string `json:"userattr"`
-	BaseDN       string `json:"basedn"`
-	Host         string `json:"host"`
-	InsecureLDAP bool   `json:"insecureldap"`
+	UserAttr        string `json:"userattr"`
+	BaseDN          string `json:"basedn"`
+	Host            string `json:"host"`
 	EnableLDAPRoles bool   `json:"enableldaproles"`
+	InsecureLDAP    bool   `json:"insecureldap"`
 	RoleAttribute   string `json:"roleattr"`
 	DefaultRoleAttr string `json:"defaultroleattr"`
 }
 
+type KeysFile struct {
+	FilePath        string `json:"filepath"`
+	UserAttr        string `json:"userattr"`
+	RoleAttr        string `json:"roleattr"`
+	DefaultRoleAttr string `json:"defaultroleattr"`
+}
+
 type Config struct {
-	LDAP LDAP `json:"ldap"`
-	AWS struct {
+	UserStorage string   `json:"userstorage"`
+	LDAP        LDAP     `json:"ldap"`
+	KeysFile    KeysFile `json:"keysfile"`
+	AWS         struct {
 		Account     string `json:"account"`
 		DefaultRole string `json:"defaultrole"`
 	} `json:"aws"`
-	Stats        string `json:"stats"`
-	Listen       string `json:"listen"`
-	CacheTimeout int    `json:"cachetimeout"`
+	EnableServerRoles bool   `json:"enableserverroles"`
+	Stats             string `json:"stats"`
+	Listen            string `json:"listen"`
+	CacheTimeout      int    `json:"cachetimeout"`
 }

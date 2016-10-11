@@ -217,3 +217,153 @@ func TestLDAPUserCache(t *testing.T) {
 		})
 	})
 }
+
+type stubKeysFile struct {
+	KeysData server.KeysMap
+}
+
+func (skf *stubKeysFile) Load() error {
+	return nil
+}
+
+func (skf *stubKeysFile) Keys() (server.KeysMap, error) {
+	return skf.KeysData, nil
+}
+
+func (skf *stubKeysFile) Search(sshKey string) (map[string]interface{}, error) {
+	return nil, nil
+}
+
+func TestKeysFileUserCache(t *testing.T) {
+	Convey("Given an keys file user cache connected to our server", t, func() {
+		// The SSH agent stuff was moved up here so that we can use it to
+		// dynamically create the LDAP result object.
+		sshSock := os.Getenv("SSH_AUTH_SOCK")
+		if sshSock == "" {
+			t.Skip()
+		}
+
+		c, err := net.Dial("unix", sshSock)
+		if err != nil {
+			t.Fatal(err)
+		}
+		agent := agent.NewClient(c)
+		keys, err := agent.List()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		keyValue := base64.StdEncoding.EncodeToString(keys[0].Blob)
+
+		// Load in an additional key from the test data.
+		privateKey, _ := ssh.ParsePrivateKey(testKey)
+		testPublicKey := base64.StdEncoding.EncodeToString(privateKey.PublicKey().Marshal())
+
+		skf := &stubKeysFile{
+			KeysData: map[string]map[string]interface{}{
+				keyValue: {
+					"username": "user1",
+					"roles":    []interface{}{"role1", "role11"},
+				},
+                testPublicKey: {
+                    "username": "user1",
+                    "roles":    []interface{}{"role1", "role11"},
+                },
+            },
+		}
+
+		kfuc, err := server.NewKeysFileUserCache(skf, g2s.Noop(), false, "username", "roles", "", "")
+        So(err, ShouldBeNil)
+		So(kfuc, ShouldNotBeNil)
+
+		Convey("It should retrieve users from file", func() {
+			So(kfuc.Users(), ShouldNotBeEmpty)
+		})
+
+        Convey("It should verify the current user positively.", func() {
+			success := false
+
+			for i := 0; i < len(keys); i++ {
+				challenge := randomBytes(64)
+				sig, err := agent.Sign(keys[i], challenge)
+				if err != nil {
+					t.Fatal(err)
+				}
+				verifiedUser, err := kfuc.Authenticate("ericallen", challenge, sig)
+				success = success || (verifiedUser != nil)
+			}
+
+			So(success, ShouldEqual, true)
+		})
+
+        Convey("When a user is requested that cannot be found in the cache", func() {
+			// Use an SSH key we're guaranteed to not have.
+            oldData := skf.KeysData[keyValue]
+            delete(skf.KeysData, keyValue)
+			kfuc.Update()
+
+			// Swap the key back and try verifying.
+			// We should still get a result back.
+			skf.KeysData[keyValue] = oldData
+			success := false
+
+			for i := 0; i < len(keys); i++ {
+				challenge := randomBytes(64)
+				sig, err := agent.Sign(keys[i], challenge)
+				if err != nil {
+					t.Fatal(err)
+				}
+				verifiedUser, err := kfuc.Authenticate("ericallen", challenge, sig)
+				success = success || (verifiedUser != nil)
+			}
+
+			Convey("Then it should update from file again and find the user.", func() {
+				So(success, ShouldEqual, true)
+			})
+		})
+
+        Convey("When a user with multiple SSH keys assigned tries to use Hologram", func() {
+			Convey("The system should allow them to use any key.", func() {
+				success := false
+
+				for i := 0; i < len(keys); i++ {
+					challenge := randomBytes(64)
+					sig, err := privateKey.Sign(cryptrand.Reader, challenge)
+					if err != nil {
+						t.Fatal(err)
+					}
+					verifiedUser, err := kfuc.Authenticate("ericallen", challenge, sig)
+					success = success || (verifiedUser != nil)
+				}
+
+				So(success, ShouldEqual, true)
+
+			})
+		})
+
+        testAuthorizedKey := string(ssh.MarshalAuthorizedKey(privateKey.PublicKey()))
+
+		skf = &stubKeysFile{
+            KeysData: map[string]map[string]interface{}{
+				testAuthorizedKey: {
+                    "username": "user1",
+                    "roles":    []interface{}{"role1", "role11"},
+                },
+            },
+		}
+        kfuc, err = server.NewKeysFileUserCache(skf, g2s.Noop(), false, "username", "roles", "", "")
+        So(err, ShouldBeNil)
+		So(kfuc, ShouldNotBeNil)
+
+		Convey("The usercache should understand the SSH authorized_keys format", func() {
+			challenge := randomBytes(64)
+			sig, err := privateKey.Sign(cryptrand.Reader, challenge)
+			if err != nil {
+				t.Fatal(err)
+			}
+			verifiedUser, err := kfuc.Authenticate("ericallen", challenge, sig)
+			So(verifiedUser, ShouldNotBeNil)
+			So(err, ShouldBeNil)
+		})
+	})
+}

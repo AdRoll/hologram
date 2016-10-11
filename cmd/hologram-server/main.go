@@ -35,6 +35,11 @@ import (
 	"github.com/peterbourgon/g2s"
 )
 
+const (
+	LDAPUserStorage = "ldap"
+	FileUserStorage = "file"
+)
+
 func ConnectLDAP(conf LDAP) (*ldap.Conn, error) {
 	var ldapServer *ldap.Conn
 	var err error
@@ -72,14 +77,17 @@ func main() {
 		ldapBindPassword = flag.String("ldapBindPassword", "", "LDAP password for bind.")
 		statsdHost       = flag.String("statsHost", "", "Address to send statsd metrics to.")
 		iamAccount       = flag.String("iamaccount", "", "AWS Account ID for generating IAM Role ARNs")
-		enableLDAPRoles  = flag.Bool("ldaproles", false, "Enable role support using LDAP directory.")
-		roleAttribute    = flag.String("roleattribute", "", "Group attribute to get role from.")
-		defaultRoleAttr  = flag.String("defaultroleattr", "", "User attribute to check to determine a user's default role.")
-		defaultRole      = flag.String("role", "", "AWS role to assume by default.")
-		configFile       = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
-		cacheTimeout     = flag.Int("cachetime", 3600, "Time in seconds after which to refresh LDAP user cache.")
-		debugMode        = flag.Bool("debug", false, "Enable debug mode.")
-		config           Config
+		// Still here for backwards compatibility
+		enableLDAPRoles   = flag.Bool("ldaproles", false, "Enable role support using LDAP directory (DEPRECATED: Use enableServerRoles instead).")
+		enableServerRoles = flag.Bool("serverRoles", false, "Enable role support using server directory.")
+		roleAttribute     = flag.String("roleattribute", "", "Group attribute to get role from.")
+		defaultRoleAttr   = flag.String("defaultroleattr", "", "User attribute to check to determine a user's default role.")
+		defaultRole       = flag.String("role", "", "AWS role to assume by default.")
+		userStorage       = flag.String("userStorage", LDAPUserStorage, "User storage type (ldap, file)")
+		configFile        = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
+		cacheTimeout      = flag.Int("cachetime", 3600, "Time in seconds after which to refresh LDAP user cache.")
+		debugMode         = flag.Bool("debug", false, "Enable debug mode.")
+		config            Config
 	)
 
 	flag.Parse()
@@ -105,6 +113,16 @@ func main() {
 	}
 
 	// Merge in command flag options.
+	if config.UserStorage == "" {
+		config.UserStorage = *userStorage
+	}
+
+	// Validating user storage value
+	if config.UserStorage != LDAPUserStorage && config.UserStorage != FileUserStorage {
+		log.Errorf("Invalid user storage value: %s. Possible values (%s, %s)", config.UserStorage, LDAPUserStorage, FileUserStorage)
+		os.Exit(1)
+	}
+
 	if *ldapAddress != "" {
 		config.LDAP.Host = *ldapAddress
 	}
@@ -137,8 +155,12 @@ func main() {
 		config.AWS.DefaultRole = *defaultRole
 	}
 
-	if *enableLDAPRoles {
+	if *enableServerRoles || *enableLDAPRoles {
 		config.LDAP.EnableLDAPRoles = true
+	}
+
+	if config.LDAP.EnableLDAPRoles || *enableLDAPRoles {
+		config.EnableServerRoles = true
 	}
 
 	if *defaultRoleAttr != "" {
@@ -177,21 +199,35 @@ func main() {
 	stsConnection := sts.New(session.New(&aws.Config{}))
 	credentialsService := server.NewDirectSessionTokenService(config.AWS.Account, stsConnection)
 
-	open := func() (server.LDAPImplementation, error) { return ConnectLDAP(config.LDAP) }
-	ldapServer, err := server.NewPersistentLDAP(open)
-	if err != nil {
-		log.Errorf("Fatal error, exiting: %s", err.Error())
-		os.Exit(1)
+	var (
+		userCache       server.UserCache
+		userStorageImpl server.UserStorage
+	)
+
+	if config.UserStorage == LDAPUserStorage {
+		open := func() (server.LDAPImplementation, error) { return ConnectLDAP(config.LDAP) }
+		userStorageImpl, err := server.NewPersistentLDAP(open)
+		if err != nil {
+			log.Errorf("Fatal error, exiting: %s", err.Error())
+			os.Exit(1)
+		}
+
+		userCache, err = server.NewLDAPUserCache(userStorageImpl, stats, config.LDAP.UserAttr, config.LDAP.BaseDN, config.EnableServerRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr)
+		if err != nil {
+			log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
+			os.Exit(1)
+		}
+	} else if config.UserStorage == FileUserStorage {
+		open := func() ([]byte, error) { return ioutil.ReadFile(config.KeysFile.FilePath) }
+		dump := func(data []byte) error {
+			return ioutil.WriteFile(config.KeysFile.FilePath, data, os.FileMode(500))
+		}
+		userStorageImpl := server.NewPersistentKeysFile(open, dump, config.KeysFile.UserAttr, config.KeysFile.RoleAttr)
+		userCache, _ = server.NewKeysFileUserCache(userStorageImpl, stats, config.EnableServerRoles, config.KeysFile.UserAttr, config.KeysFile.RoleAttr, config.AWS.DefaultRole, config.KeysFile.DefaultRoleAttr)
 	}
 
-	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr)
-	if err != nil {
-		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
-		os.Exit(1)
-	}
-
-	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.DefaultRoleAttr)
-	server, err := remote.NewServer(config.Listen, serverHandler.HandleConnection)
+	serverHandler := server.New(userCache, credentialsService, config.AWS.DefaultRole, stats, userStorageImpl, config.EnableServerRoles)
+	server, _ := remote.NewServer(config.Listen, serverHandler.HandleConnection)
 
 	// Wait for a signal from the OS to shutdown.
 	terminate := make(chan os.Signal)
@@ -227,10 +263,12 @@ WaitForTermination:
 			log.DebugMode(false)
 		case <-reloadCacheSigHup:
 			log.Info("Force-reloading user cache.")
-			ldapCache.Update()
+			err := userCache.Update()
+			log.Errorf("Error while updating cache: %s", err.Error())
 		case <-cacheTimeoutTicker.C:
-			log.Info("Cache timeout. Reloading user cache.")
-			ldapCache.Update()
+			err := userCache.Update()
+			log.Errorf("Error while updating cache: %s", err.Error())
+
 		}
 	}
 

@@ -76,7 +76,7 @@ func (*dummyCredentials) GetSessionToken(user *server.User) (*sts.Credentials, e
 	}, nil
 }
 
-func (*dummyCredentials) AssumeRole(user *server.User, role string, enableLDAPRoles bool) (*sts.Credentials, error) {
+func (*dummyCredentials) AssumeRole(user *server.User, role string, enableServerRoles bool) (*sts.Credentials, error) {
 	accessKey := "access_key"
 	secretKey := "secret"
 	token := "token"
@@ -119,11 +119,23 @@ func (l *DummyLDAP) Search(*ldap.SearchRequest) (*ldap.SearchResult, error) {
 	}, nil
 }
 
+func (l *DummyLDAP) SearchUser(userData map[string]string) (map[string]interface{}, error) {
+	r, _ := l.Search(nil)
+	return map[string]interface{}{
+		"password":      r.Entries[0].GetAttributeValue("userPassword"),
+		"sshPublicKeys": r.Entries[0].GetAttributeValues("sshPublicKey"),
+	}, nil
+}
+
 func (l *DummyLDAP) Modify(mr *ldap.ModifyRequest) error {
 	if reflect.DeepEqual(mr, l.req) {
 		l.sshKeys = []string{"test"}
 	}
 	return nil
+}
+
+func (l *DummyLDAP) ModifyUser(data map[string]string) error {
+	return l.Modify(l.req)
 }
 
 func TestServerStateMachine(t *testing.T) {
@@ -139,7 +151,7 @@ func TestServerStateMachine(t *testing.T) {
 			sshKeys:  []string{},
 			req:      neededModifyRequest,
 		}
-		testServer := server.New(authenticator, &dummyCredentials{}, "default", g2s.Noop(), ldap, "cn", "dc=testdn,dc=com", false, "")
+		testServer := server.New(authenticator, &dummyCredentials{}, "default", g2s.Noop(), ldap, false)
 		r, w := io.Pipe()
 
 		testConnection := protocol.NewMessageConnection(ReadWriter(r, w))
