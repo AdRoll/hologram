@@ -140,7 +140,11 @@ func main() {
 	password = os.Getenv("LDAP_PASSWORD")
 	if password == "" {
 		fmt.Printf("LDAP Password: ")
-		passwordBytes = gopass.GetPasswdMasked()
+		passwordBytes, err = gopass.GetPasswdMasked()
+		if err != nil {
+			fmt.Printf("Cannot parse you LDAP passwor. Aborting. (%v)\n", err)
+			os.Exit(1)
+		}
 		password = string(passwordBytes[:len(passwordBytes)])
 	}
 
