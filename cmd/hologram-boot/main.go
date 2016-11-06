@@ -1,5 +1,3 @@
-// Script to launch "hologram me" as soon as the network/server are ready
-//
 // Copyright 2014 AdRoll, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Script to launch "hologram me" as soon as the network/server are ready
 package main
 
 import (
@@ -43,12 +42,13 @@ func main() {
 		log.Fatal(err)
 	}
 
+	var sleepTime = 1 * time.Second
 	for {
-		time.Sleep(1 * time.Second)
+		time.Sleep(sleepTime)
 		_, err := net.Dial("tcp", config.Host)
 		if err != nil {
 			// TODO: Better error handling. Exponential backoff if server is truly down
-			log.Println("Error connecting to server", err)
+			log.Println("Error connecting to server %v, (%s)", config.Host,  err.Error())
 			continue
 		}
 

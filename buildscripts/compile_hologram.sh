@@ -2,6 +2,8 @@
 
 source ${HOLOGRAM_DIR}/buildscripts/returncodes.sh
 
+# go get -u github.com/kardianos/govendor
+
 echo "Compiling for linux..."
 GOOS=linux  go install github.com/AdRoll/hologram/... || exit ${ERRCOMPILE}
 

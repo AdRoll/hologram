@@ -15,7 +15,6 @@ elif [ "$1" == "build_all" ]; then
 elif [ "$1" == "test" ]; then
     compile_hologram.sh --deps || exit $?
 elif [ "$1" == "console" ]; then
-    install_deps.sh || exit $?
     bash
 else
     echo "Valid options: build_linux, build_osx, build_all, test, console"

@@ -1,21 +1,3 @@
-/// Package log provides a useful logging subsystem for Hologram tools.
-//
-// By default, it will log INFO-level messages to the system log and standard out,
-// but DEBUG-level messages can be output to these sinks as well. By defaut DEBUG
-// messages are suppressed.
-//
-// Messages emitted to the terminal are colourised for easy visual parsing, if the
-// terminal supports it. The following colours are used:
-// 	* Info:			White
-// 	* Warning:	Yellow
-// 	* Error:		Red
-// 	* Debug:		Cyan
-//
-// The log format is as follows:
-//
-// [WARNING] 06/11/2014 18:22:34Z Message text.
-// [ERROR  ] 06/11/2014 18:22:56Z Time to fail.
-//
 // Copyright 2014 AdRoll, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,6 +11,25 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Package log provides a useful logging subsystem for Hologram tools.
+//
+// By default, it will log INFO-level messages to the system log and standard out,
+// but DEBUG-level messages can be output to these sinks as well. By defaut DEBUG
+// messages are suppressed.
+//
+// Messages emitted to the terminal are colourised for easy visual parsing, if the
+// terminal supports it. The following colours are used:
+// 	* Info:		White
+// 	* Warning:	Yellow
+// 	* Error:	Red
+// 	* Debug:	Cyan
+//
+// The log format is as follows:
+//
+// [WARNING] 06/11/2014 18:22:34Z Message text.
+// [ERROR  ] 06/11/2014 18:22:56Z Time to fail.
+//
 package log
 
 import (
