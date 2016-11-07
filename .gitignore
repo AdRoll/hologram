@@ -8,3 +8,4 @@ artifacts/
 /bin
 deploy/healthcheck
 .hologram-package-config
+.idea/
