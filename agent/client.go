@@ -18,6 +18,9 @@ package agent
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/remote"
@@ -25,8 +28,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"strings"
-	"time"
 )
 
 type CredentialsReceiver interface {

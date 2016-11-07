@@ -20,9 +20,10 @@ package server
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/AdRoll/hologram/log"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"strings"
 )
 
 /*
