@@ -65,13 +65,7 @@ func main() {
 	}
 
 	// Emit the final config options for debugging if requested.
-	log.Debug("Final config:")
 	log.Debug("Hologram server address: %s", config.Host)
-
-	defer func() {
-		log.Debug("Removing UNIX socket.")
-		os.Remove("/var/run/hologram.sock")
-	}()
 
 	// Startup the HTTP server and respond to requests.
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{
@@ -91,25 +85,32 @@ func main() {
 		os.Exit(1)
 	}
 	mds.Start()
-	var client (agent.Client)
+
 	// Create a hologram client that can be used by other services to talk to the server
+	var client (agent.Client)
 	if config.Host != "" {
 		client = agent.NewClient(config.Host, credsManager)
 	} else {
 		client = agent.AccessKeyClient(credsManager)
 	}
+
 	agentServer := agent.NewCliHandler("/var/run/hologram.sock", client)
 	if err := agentServer.Start(); err != nil {
 		log.Errorf("Could not start agentServer: %s", err.Error())
 		os.Exit(1)
 	}
 
+	defer func() {
+		log.Debug("Removing UNIX socket.")
+		os.Remove("/var/run/hologram.sock")
+	}()
+
 	// Wait for a graceful shutdown signal
 	terminate := make(chan os.Signal, 1)
 	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan bool)
 
-	// SIGUSR1 and SIGUSR2 should make Hologram enable and disable debug logging,
-	// respectively.
+	// SIGUSR1 and SIGUSR2 should make Hologram enable and disable debug logging, respectively.
 	debugEnable := make(chan os.Signal, 1)
 	debugDisable := make(chan os.Signal, 1)
 	signal.Notify(debugEnable, syscall.SIGUSR1)
@@ -117,20 +118,27 @@ func main() {
 
 	log.Info("Hologram agent is online, waiting for termination.")
 
-WaitForTermination:
-	for {
-		select {
-		case s := <-terminate:
-			log.Info("Signal received on terminate chan: %+v", s)
-			break WaitForTermination
-		case <-debugEnable:
-			log.Info("Enabling debug mode.")
-			log.DebugMode(true)
-		case <-debugDisable:
-			log.Info("Disabling debug mode.")
-			log.DebugMode(false)
-		}
-	}
+	// Handle termination
+	go func() {
+		s := <-terminate
+		log.Info("Signal received by termination handler: %+v", s)
+		done <- true
+	}()
 
+	// Handle dynamic settings changes)
+	go func() {
+		for {
+			select {
+			case <-debugEnable:
+				log.Info("Enabling debug mode.")
+				log.DebugMode(true)
+			case <-debugDisable:
+				log.Info("Disabling debug mode.")
+				log.DebugMode(false)
+			}
+		}
+	}()
+
+	<-done
 	log.Info("Caught signal; shutting down now.")
 }
