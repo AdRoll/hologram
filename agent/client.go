@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
+	"github.com/AdRoll/hologram/server"
 	"github.com/AdRoll/hologram/transport/remote"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -43,13 +44,12 @@ type client struct {
 }
 
 type accessKeyClient struct {
-	sts         *sts.STS
-	iamAccount  string
+	credentialService server.CredentialService
 	iamUsername string
 	cr          CredentialsReceiver
 }
 
-func AccessKeyClient(cr CredentialsReceiver) *accessKeyClient {
+func AccessKeyClient(cr CredentialsReceiver, accountAliases *map[string]string) *accessKeyClient {
 	config := aws.Config{}
 	sess, err := session.NewSession(&config)
 	if err != nil {
@@ -63,10 +63,9 @@ func AccessKeyClient(cr CredentialsReceiver) *accessKeyClient {
 	}
 	iamAccount := strings.Split(*iamUser.User.Arn, ":")[4]
 	iamUsername := iamUser.User.UserName
-
+	credentialService := server.NewDirectSessionTokenService(iamAccount, sts, accountAliases)
 	c := &accessKeyClient{
-		sts:         sts,
-		iamAccount:  iamAccount,
+		credentialService: credentialService,
 		iamUsername: *iamUsername,
 		cr:          cr,
 	}
@@ -76,63 +75,27 @@ func AccessKeyClient(cr CredentialsReceiver) *accessKeyClient {
 	return c
 }
 
-func (c *accessKeyClient) buildARN(role string) *string {
-	var arn string
-
-	if strings.HasPrefix(role, "arn:aws:iam") {
-		arn = role
-	} else if strings.Contains(role, ":role/") {
-		arn = fmt.Sprintf("arn:aws:iam::%s", role)
-	} else {
-		arn = fmt.Sprintf("arn:aws:iam::%s:role/%s", c.iamAccount, role)
-	}
-
-	return &arn
-}
 
 func (c *accessKeyClient) AssumeRole(role string) error {
-	durationSeconds := int64(3600)
-	roleArn := c.buildARN(role)
-	roleSessionName := c.iamUsername
-	options := &sts.AssumeRoleInput{
-		DurationSeconds: &durationSeconds,
-		RoleArn:         roleArn,
-		RoleSessionName: &roleSessionName,
+	user := server.User{
+		Username:c.iamUsername,
 	}
+	response, err := c.credentialService.AssumeRole(&user, role, false)
 
-	response, err := c.sts.AssumeRole(options)
 	if err != nil {
 		return err
 	}
-	creds := &sts.Credentials{
-		AccessKeyId:     response.Credentials.AccessKeyId,
-		SessionToken:    response.Credentials.SessionToken,
-		SecretAccessKey: response.Credentials.SecretAccessKey,
-		Expiration:      response.Credentials.Expiration,
-	}
-	if err != nil {
-		return err
-	}
-	c.cr.SetCredentials(creds, role)
+	c.cr.SetCredentials(response, role)
 	return nil
 }
 
 func (c *accessKeyClient) GetUserCredentials() error {
-	durationSeconds := int64(3600)
-	options := &sts.GetSessionTokenInput{
-		DurationSeconds: &durationSeconds,
-	}
-	response, err := c.sts.GetSessionToken(options)
-	creds := &sts.Credentials{
-		AccessKeyId:     response.Credentials.AccessKeyId,
-		SessionToken:    response.Credentials.SessionToken,
-		SecretAccessKey: response.Credentials.SecretAccessKey,
-		Expiration:      response.Credentials.Expiration,
-	}
+	response, err := c.credentialService.GetSessionToken()
+
 	if err != nil {
 		return err
 	}
-	c.cr.SetCredentials(creds, "")
+	c.cr.SetCredentials(response, "")
 	return nil
 }
 

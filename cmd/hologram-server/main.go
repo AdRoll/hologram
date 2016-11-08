@@ -175,7 +175,7 @@ func main() {
 
 	// Setup the server state machine that responds to requests.
 	stsConnection := sts.New(session.New(&aws.Config{}))
-	credentialsService := server.NewDirectSessionTokenService(config.AWS.Account, stsConnection)
+	credentialsService := server.NewDirectSessionTokenService(config.AWS.Account, stsConnection, &config.AccountAliases)
 
 	open := func() (server.LDAPImplementation, error) { return ConnectLDAP(config.LDAP) }
 	ldapServer, err := server.NewPersistentLDAP(open)

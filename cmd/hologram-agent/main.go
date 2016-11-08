@@ -95,7 +95,7 @@ func main() {
 	if config.Host != "" {
 		client = agent.NewClient(config.Host, credsManager)
 	} else {
-		client = agent.AccessKeyClient(credsManager)
+		client = agent.AccessKeyClient(credsManager, &config.AccountAliases)
 	}
 	agentServer := agent.NewCliHandler("/var/run/hologram.sock", client)
 	err = agentServer.Start()

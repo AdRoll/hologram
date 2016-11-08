@@ -36,4 +36,5 @@ type Config struct {
 	Stats        string `json:"stats"`
 	Listen       string `json:"listen"`
 	CacheTimeout int    `json:"cachetimeout"`
+	AccountAliases   map[string]string `json:"accountAliases`
 }

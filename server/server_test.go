@@ -63,7 +63,7 @@ func (d *DummyAuthenticator) Update() error { return nil }
 
 type dummyCredentials struct{}
 
-func (*dummyCredentials) GetSessionToken(user *server.User) (*sts.Credentials, error) {
+func (*dummyCredentials) GetSessionToken() (*sts.Credentials, error) {
 	accessKey := "access_key"
 	secretKey := "secret"
 	token := "token"
