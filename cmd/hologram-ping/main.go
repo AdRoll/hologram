@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net"
-
+	"crypto/tls"
+	"crypto/x509"
 	"github.com/AdRoll/hologram/protocol"
 )
 
@@ -15,7 +15,16 @@ func main() {
 	flag.Parse()
 	connString := fmt.Sprintf("%s:%d", *host, *port)
 
-	conn, err := net.Dial("tcp", connString)
+	pool := x509.NewCertPool()
+
+	tlsConf := &tls.Config{
+		RootCAs: pool,
+		// Hologram only uses TLS to ensure the credentials that go across the wire are kept secret, and since go uses
+		// ECDHE by default, we actually don't care about leaking keys or authenticating either end of the connection.
+		InsecureSkipVerify: true,
+	}
+
+	conn, err := tls.Dial("tcp", connString, tlsConf)
 	if err != nil {
 		panic(err)
 	}
