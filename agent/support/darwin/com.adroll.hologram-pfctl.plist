@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer/DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>Label</key>
+        <string>com.adroll.hologram-pfctl.plist</string>
+        <key>Program</key>
+        <string>/sbin/pfctl</string>
+        <key>ProgramArguments</key>
+        <array>
+                <string>/sbin/pfctl</string>
+                <string>-e</string>
+                <string>-f</string>
+                <string>/etc/pf.hologram.conf</string>
+        </array>
+        <key>RunAtLoad</key>
+        <true/>
+        <key>ServiceDescription</key>
+        <string>FreeBSD Packet Filter (pf) daemon</string>
+    <key>StandardErrorPath</key>
+        <string>/var/log/pf.log</string>
+        <key>StandardOutPath</key>
+        <string>/var/log/pf.log</string>
+</dict>
+</plist>

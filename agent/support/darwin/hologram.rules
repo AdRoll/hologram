@@ -1,0 +1,2 @@
+rdr pass on lo0 inet proto tcp from any to 169.254.169.254 port = 80 -> 169.254.169.254 port 16925
+

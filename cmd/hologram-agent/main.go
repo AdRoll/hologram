@@ -31,6 +31,7 @@ var (
 	dialAddress = flag.String("addr", "", "Address to connect to hologram server on.")
 	debugMode   = flag.Bool("debug", false, "Enable debug mode.")
 	configFile  = flag.String("conf", "/etc/hologram/agent.json", "Config file to load.")
+	httpPort    = flag.Int("port", 80, "Port for metadata service to listen on")
 	config      Config
 )
 
@@ -75,7 +76,7 @@ func main() {
 	// Startup the HTTP server and respond to requests.
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{
 		IP:   net.ParseIP("169.254.169.254"),
-		Port: 80,
+		Port: *httpPort,
 	})
 	if err != nil {
 		log.Errorf("Could not startup the metadata interface: %s", err)
