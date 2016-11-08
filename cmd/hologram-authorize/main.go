@@ -162,4 +162,16 @@ func main() {
 	}
 
 	c.Write(testMessage)
+
+	response, err := c.Read()
+	if err != nil {
+		fmt.Printf("There was an error processing the command. %s", err)
+		os.Exit(3)
+	} else if response.Error != nil {
+		fmt.Printf("Received an error from the server: %s\n", *response.Error)
+		os.Exit(3)
+	} else {
+		fmt.Printf("Successfully saved key!")
+	}
+
 }

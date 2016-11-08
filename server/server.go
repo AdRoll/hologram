@@ -93,6 +93,13 @@ func (sm *server) HandlePing(m protocol.MessageReadWriteCloser, p *protocol.Ping
 	m.Write(pingMsg)
 }
 
+func (sm *server) WriteError(m protocol.MessageReadWriteCloser, errStr string) {
+	errMsg := &protocol.Message{
+		Error: &errStr,
+	}
+	m.Write(errMsg)
+}
+
 /*
 HandleServerRequest handles the flow for messages that this server
 accepts from clients.
@@ -119,12 +126,8 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 
 				if err != nil {
 					// error message from Amazon, so forward that on to the client
-					errStr := err.Error()
-					errMsg := &protocol.Message{
-						Error: &errStr,
-					}
 					log.Errorf("Error from AWS for AssumeRole: %s", err.Error())
-					m.Write(errMsg)
+					sm.WriteError(m, err.Error())
 					sm.stats.Counter(1.0, "errors.assumeRole", 1)
 
 					// Attempt to use the default role to fall back
@@ -156,10 +159,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 				creds, err = sm.credentials.AssumeRole(user, user.DefaultRole, sm.enableLDAPRoles)
 				if err != nil {
 					errStr := fmt.Sprintf("Could not get user credentials. %s may not have been given Hologram access yet.", user.Username)
-					errMsg := &protocol.Message{
-						Error: &errStr,
-					}
-					m.Write(errMsg)
+					sm.WriteError(m, errStr)
 				}
 				m.Close()
 				return
@@ -181,11 +181,13 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		user, err := sm.ldapServer.Search(sr)
 		if err != nil {
 			log.Errorf("Error trying to handle addSSHKeyMsg: %s", err.Error())
+			sm.WriteError(m, "There was an error connecting to the data source.")
 			return
 		}
 
 		if len(user.Entries) == 0 {
 			log.Errorf("User %s not found!", addSSHKeyMsg.GetUsername())
+			sm.WriteError(m, "The username or password is incorrect.")
 			return
 		}
 
@@ -193,6 +195,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		password := user.Entries[0].GetAttributeValue("userPassword")
 		if password != addSSHKeyMsg.GetPasswordhash() {
 			log.Errorf("Provided password for user %s does not match %s!", addSSHKeyMsg.GetUsername(), password)
+			sm.WriteError(m, "The username or password is incorrect.")
 			return
 		}
 
@@ -200,8 +203,8 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		for _, k := range user.Entries[0].GetAttributeValues("sshPublicKey") {
 			if k == addSSHKeyMsg.GetSshkeybytes() {
 				log.Warning("User %s already has this SSH key. Doing nothing.", addSSHKeyMsg.GetUsername())
-				successMsg := &protocol.Message{Success: &protocol.Success{}}
-				m.Write(successMsg)
+				successMsg := protocol.Message{Success:&protocol.Success{}}
+				m.Write(&successMsg)
 				return
 			}
 		}
@@ -211,6 +214,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		err = sm.ldapServer.Modify(mr)
 		if err != nil {
 			log.Errorf("Could not modify LDAP user: %s", err.Error())
+			sm.WriteError(m, "Error saving ssh key")
 			return
 		}
 

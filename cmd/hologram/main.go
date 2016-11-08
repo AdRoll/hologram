@@ -107,7 +107,7 @@ func me() error {
 func request(req *protocol.AgentRequest) (*protocol.AgentResponse, error) {
 	client, err := local.NewClient("/var/run/hologram.sock")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Unable to connect to hologram socket.  Is hologram-agent running? Error: %s", err.Error())
 	}
 
 	// Try to get to the user's SSH agent, for best compatibility.
