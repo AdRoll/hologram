@@ -17,7 +17,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 type credentialsExpirationManager struct {

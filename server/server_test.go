@@ -23,7 +23,7 @@ import (
 
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/server"
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/service/sts"
 	"github.com/nmcclain/ldap"
 	"github.com/peterbourgon/g2s"
 	. "github.com/smartystreets/goconvey/convey"
@@ -64,20 +64,28 @@ func (d *DummyAuthenticator) Update() error { return nil }
 type dummyCredentials struct{}
 
 func (*dummyCredentials) GetSessionToken(user *server.User) (*sts.Credentials, error) {
+	accessKey := "access_key"
+	secretKey := "secret"
+	token := "token"
+	expiration := time.Now().Add(5 * time.Minute)
 	return &sts.Credentials{
-		AccessKeyId:     "access_key",
-		SecretAccessKey: "secret",
-		SessionToken:    "token",
-		Expiration:      time.Now().Add(5 * time.Minute),
+		AccessKeyId:     &accessKey,
+		SecretAccessKey: &secretKey,
+		SessionToken:    &token,
+		Expiration:      &expiration,
 	}, nil
 }
 
 func (*dummyCredentials) AssumeRole(user *server.User, role string, enableLDAPRoles bool) (*sts.Credentials, error) {
+	accessKey := "access_key"
+	secretKey := "secret"
+	token := "token"
+	expiration := time.Now().Add(5 * time.Minute)
 	return &sts.Credentials{
-		AccessKeyId:     "access_key",
-		SecretAccessKey: "secret",
-		SessionToken:    "token",
-		Expiration:      time.Now().Add(5 * time.Minute),
+		AccessKeyId:     &accessKey,
+		SecretAccessKey: &secretKey,
+		SessionToken:    &token,
+		Expiration:      &expiration,
 	}, nil
 }
 

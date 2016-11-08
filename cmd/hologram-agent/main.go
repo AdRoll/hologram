@@ -90,10 +90,13 @@ func main() {
 		os.Exit(1)
 	}
 	mds.Start()
-
+	var client (agent.Client)
 	// Create a hologram client that can be used by other services to talk to the server
-	client := agent.NewClient(config.Host, credsManager)
-
+	if config.Host != "" {
+		client = agent.NewClient(config.Host, credsManager)
+	} else {
+		client = agent.AccessKeyClient(credsManager)
+	}
 	agentServer := agent.NewCliHandler("/var/run/hologram.sock", client)
 	err = agentServer.Start()
 	if err != nil {

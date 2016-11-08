@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goamz/goamz/sts"
+	"github.com/aws/aws-sdk-go/service/sts"
 )
 
 /*
@@ -136,9 +136,9 @@ func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Reques
 		Code:            "Success",
 		LastUpdated:     time.Now().UTC().Format(time.RFC3339),
 		Type:            "AWS-HMAC",
-		AccessKeyId:     creds.AccessKeyId,
-		SecretAccessKey: creds.SecretAccessKey,
-		Token:           creds.SessionToken,
+		AccessKeyId:     *creds.AccessKeyId,
+		SecretAccessKey: *creds.SecretAccessKey,
+		Token:           *creds.SessionToken,
 		Expiration:      creds.Expiration.UTC().Format(time.RFC3339),
 	}
 	respBody, err := json.Marshal(resp)

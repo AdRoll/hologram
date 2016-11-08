@@ -149,6 +149,13 @@ You will need to modify the Trusted Entities for each of these roles that you cr
     }
 ```
 
+### Serverless
+
+The hologram agent supports being run without a server, based on long-lived user credentials.  To use, instead of defining host in the config.json file, it uses the go sdk [default credentials provider](https://github.com/aws/aws-sdk-go/#configuring-credentials) on the hologram-agent.
+This can be done by adding environment variables to the launch daemon .plist, or set the HOME environment variable in the plist to the directory containing your `.aws` directory.
+
+The user must have permission to iam:GetUser on itself(resource "arn:aws:iam::ACCOUNT-ID-WITHOUT-HYPHENS:user/${aws:username}").  `hologram me` uses getsessiontoken from sts, which has some [limitations](http://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_control-access_getsessiontoken.html).  With assume role permissions, `hologram use <role>` will assume into any role bypassing those restrictions.
+
 ### LDAP Based Roles
 
 Hologram supports assigning roles based on a user's LDAP group. Roles can be turned on by setting the `enableLDAPRoles` key to `true` in `config/server.json`.
@@ -170,6 +177,10 @@ Here are some issues we've run into running Hologram that you might want to be a
 * **Sometimes OS X workstations don't like SSH agent.** Some developers have needed to do `ssh-add -K` to add their key to the keychain; some have needed to do this every time they boot; and some just don't require it at all. Your mileage may vary.
 * **If you use an ELB to load-balance between Hologram servers, do not have it terminate the TLS connection.** It's pointless to have your ELB use the SSL certificate compiled into Hologram, when the servers themselves know how to handle it. Let them do their job, and have your ELB just use the TCP protocol.
 * **Your LDAP server might not support TLS** In that case, you'll want to set "insecureldap" to true in the server config file which will configure hologram to connect to the LDAP server without using TLS. Otherwise you might just get a (somewhat cryptic) "connection reset by peer" error.
+
+## Related Projects
+
+[Holochrome](https://github.com/Bridgewater/holochrome) is a chrome extension that allows you to easily log in and switch between your AWS accounts using a single key stroke.  As it uses the metadata service, it can use hologram as its credential provider.
 
 ## License
 
