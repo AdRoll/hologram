@@ -11,11 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Hologram workstation agent
 package agent
 
 import (
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/server"
@@ -24,8 +29,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"strings"
-	"time"
 )
 
 type CredentialsReceiver interface {

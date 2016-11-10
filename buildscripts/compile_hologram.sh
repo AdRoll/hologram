@@ -2,9 +2,7 @@
 
 source ${HOLOGRAM_DIR}/buildscripts/returncodes.sh
 
-if [ "$1" == "--deps" ]; then
-    install_deps.sh || exit $?
-fi
+# go get -u github.com/kardianos/govendor
 
 echo "Compiling for linux..."
 GOOS=linux  go install github.com/AdRoll/hologram/... || exit ${ERRCOMPILE}

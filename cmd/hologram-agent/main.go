@@ -1,4 +1,3 @@
-// Hologram workstation agent.
 // Copyright 2014 AdRoll, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Hologram workstation agent.
 package main
 
 import (
@@ -44,9 +45,9 @@ func main() {
 
 	// Parse in options from the given config file.
 	log.Debug("Loading configuration from %s", *configFile)
-	configContents, configErr := ioutil.ReadFile(*configFile)
-	if configErr != nil {
-		log.Errorf("Could not read from config file. The error was: %s", configErr.Error())
+	configContents, err := ioutil.ReadFile(*configFile)
+	if err != nil {
+		log.Errorf("Error reading from config file: %s", err.Error())
 		os.Exit(1)
 	}
 
@@ -56,7 +57,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Resolve configuration from the file and commond-line flags.
+	// Resolve configuration from the file and command-line flags.
 	// Flags will always take precedence.
 	if *dialAddress != "" {
 		log.Debug("Using command-line remote address.")
@@ -64,13 +65,7 @@ func main() {
 	}
 
 	// Emit the final config options for debugging if requested.
-	log.Debug("Final config:")
 	log.Debug("Hologram server address: %s", config.Host)
-
-	defer func() {
-		log.Debug("Removing UNIX socket.")
-		os.Remove("/var/run/hologram.sock")
-	}()
 
 	// Startup the HTTP server and respond to requests.
 	listener, err := net.ListenTCP("tcp", &net.TCPAddr{
@@ -78,58 +73,72 @@ func main() {
 		Port: 80,
 	})
 	if err != nil {
-		log.Errorf("Could not startup the metadata interface: %s", err)
+		log.Errorf("Could not start up the metadata interface: %s", err.Error())
 		os.Exit(1)
 	}
 
 	credsManager := agent.NewCredentialsExpirationManager()
 
-	mds, metadataError := agent.NewMetadataService(listener, credsManager)
-	if metadataError != nil {
-		log.Errorf("Could not create metadata service: %s", metadataError.Error())
+	mds, err := agent.NewMetadataService(listener, credsManager)
+	if err != nil {
+		log.Errorf("Could not create metadata service: %s", err.Error())
 		os.Exit(1)
 	}
 	mds.Start()
-	var client (agent.Client)
+
 	// Create a hologram client that can be used by other services to talk to the server
+	var client (agent.Client)
 	if config.Host != "" {
 		client = agent.NewClient(config.Host, credsManager)
 	} else {
 		client = agent.AccessKeyClient(credsManager, &config.AccountAliases)
 	}
+
 	agentServer := agent.NewCliHandler("/var/run/hologram.sock", client)
-	err = agentServer.Start()
-	if err != nil {
+	if err := agentServer.Start(); err != nil {
 		log.Errorf("Could not start agentServer: %s", err.Error())
 		os.Exit(1)
 	}
 
-	// Wait for a graceful shutdown signal
-	terminate := make(chan os.Signal)
-	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
+	defer func() {
+		log.Debug("Removing UNIX socket.")
+		os.Remove("/var/run/hologram.sock")
+	}()
 
-	// SIGUSR1 and SIGUSR2 should make Hologram enable and disable debug logging,
-	// respectively.
-	debugEnable := make(chan os.Signal)
-	debugDisable := make(chan os.Signal)
+	// Wait for a graceful shutdown signal
+	terminate := make(chan os.Signal, 1)
+	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan bool)
+
+	// SIGUSR1 and SIGUSR2 should make Hologram enable and disable debug logging, respectively.
+	debugEnable := make(chan os.Signal, 1)
+	debugDisable := make(chan os.Signal, 1)
 	signal.Notify(debugEnable, syscall.SIGUSR1)
 	signal.Notify(debugDisable, syscall.SIGUSR2)
 
 	log.Info("Hologram agent is online, waiting for termination.")
 
-WaitForTermination:
-	for {
-		select {
-		case <-terminate:
-			break WaitForTermination
-		case <-debugEnable:
-			log.Info("Enabling debug mode.")
-			log.DebugMode(true)
-		case <-debugDisable:
-			log.Info("Disabling debug mode.")
-			log.DebugMode(false)
-		}
-	}
+	// Handle termination
+	go func() {
+		s := <-terminate
+		log.Info("Signal received by termination handler: %+v", s)
+		done <- true
+	}()
 
+	// Handle dynamic settings changes)
+	go func() {
+		for {
+			select {
+			case <-debugEnable:
+				log.Info("Enabling debug mode.")
+				log.DebugMode(true)
+			case <-debugDisable:
+				log.Info("Disabling debug mode.")
+				log.DebugMode(false)
+			}
+		}
+	}()
+
+	<-done
 	log.Info("Caught signal; shutting down now.")
 }

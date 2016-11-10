@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Hologram LDAP authorization utility.
 package main
 
 import (
@@ -140,7 +142,11 @@ func main() {
 	password = os.Getenv("LDAP_PASSWORD")
 	if password == "" {
 		fmt.Printf("LDAP Password: ")
-		passwordBytes = gopass.GetPasswdMasked()
+		passwordBytes, err = gopass.GetPasswdMasked()
+		if err != nil {
+			fmt.Printf("Cannot parse you LDAP passwor. Aborting. (%v)\n", err)
+			os.Exit(1)
+		}
 		password = string(passwordBytes[:len(passwordBytes)])
 	}
 

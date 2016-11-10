@@ -1,4 +1,3 @@
-// Hologram auth server.
 // Copyright 2014 AdRoll, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Hologram auth server.
 package main
 
 import (
@@ -184,29 +185,30 @@ func main() {
 		os.Exit(1)
 	}
 
-	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr)
+	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN,
+		config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr)
 	if err != nil {
 		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
 		os.Exit(1)
 	}
 
-	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer, config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.DefaultRoleAttr)
+	serverHandler := server.New(ldapCache, credentialsService, config.AWS.DefaultRole, stats, ldapServer,
+		config.LDAP.UserAttr, config.LDAP.BaseDN, config.LDAP.EnableLDAPRoles, config.LDAP.DefaultRoleAttr)
 	server, err := remote.NewServer(config.Listen, serverHandler.HandleConnection)
 
 	// Wait for a signal from the OS to shutdown.
-	terminate := make(chan os.Signal)
+	terminate := make(chan os.Signal, 1)
 	signal.Notify(terminate, syscall.SIGINT, syscall.SIGTERM)
+	done := make(chan bool)
 
-	// SIGUSR1 and SIGUSR2 should make Hologram enable and disable debug logging,
-	// respectively.
-	debugEnable := make(chan os.Signal)
-	debugDisable := make(chan os.Signal)
+	// SIGUSR1 and SIGUSR2 should make Hologram enable and disable debug logging, respectively.
+	debugEnable := make(chan os.Signal, 1)
+	debugDisable := make(chan os.Signal, 1)
 	signal.Notify(debugEnable, syscall.SIGUSR1)
 	signal.Notify(debugDisable, syscall.SIGUSR2)
 
-	// SIGHUP should make Hologram server reload its cache of user information
-	// from LDAP.
-	reloadCacheSigHup := make(chan os.Signal)
+	// SIGHUP should make Hologram server reload its cache of user information from LDAP.
+	reloadCacheSigHup := make(chan os.Signal, 1)
 	signal.Notify(reloadCacheSigHup, syscall.SIGHUP)
 
 	// Reload the cache based on time set in configuration
@@ -214,26 +216,34 @@ func main() {
 
 	log.Info("Hologram server is online, waiting for termination.")
 
-WaitForTermination:
-	for {
-		select {
-		case <-terminate:
-			break WaitForTermination
-		case <-debugEnable:
-			log.Info("Enabling debug mode.")
-			log.DebugMode(true)
-		case <-debugDisable:
-			log.Info("Disabling debug mode.")
-			log.DebugMode(false)
-		case <-reloadCacheSigHup:
-			log.Info("Force-reloading user cache.")
-			ldapCache.Update()
-		case <-cacheTimeoutTicker.C:
-			log.Info("Cache timeout. Reloading user cache.")
-			ldapCache.Update()
-		}
-	}
+	// Handle termination
+	go func() {
+		s := <-terminate
+		log.Info("Signal received by termination handler: %+v", s)
+		done <- true
+	}()
 
+	// Handle dynamic settings changes
+	go func() {
+		for {
+			select {
+			case <-debugEnable:
+				log.Info("Enabling debug mode.")
+				log.DebugMode(true)
+			case <-debugDisable:
+				log.Info("Disabling debug mode.")
+				log.DebugMode(false)
+			case <-reloadCacheSigHup:
+				log.Info("Force-reloading user cache.")
+				ldapCache.Update()
+			case <-cacheTimeoutTicker.C:
+				log.Info("Cache timeout. Reloading user cache.")
+				ldapCache.Update()
+			}
+		}
+	}()
+
+	<-done
 	log.Info("Caught signal; shutting down now.")
 	server.Close()
 }
