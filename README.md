@@ -158,7 +158,8 @@ The config files can set accountAliases, a dictionary from short name to account
   "accountAliases":{
     "dev":"arn:aws:iam::123456"
   }
-}```
+} 
+```
 
 With this config, `hologram use dev/service` would be equivalent to `hologram use arn:aws:iam::123456:role/service`
 
@@ -176,6 +177,18 @@ Hologram supports assigning roles based on a user's LDAP group. Roles can be tur
 An LDAP group attribute will have to be chosen for user roles. By default `businessCategory` is chosen for this role since it is part of the core LDAP schema. The attribute used can be modified by editing the `roleAttribute` key in `config/server.json`. The value of this attribute should be the name of the group's role in AWS.
 
 Users will have to be added to a group giving them access to the default role before they can use Hologram. It is recommended that a group such as `Hologram-Users` be created with attribute `businessCategory` set to the name of the default AWS role.
+
+### Running the agent as a user (Experimental, OSX only)
+
+Behavior is undefined in a multi-user environment.
+
+We can run the agent on a higher port and route port 80 through firewall rules using pf.  All supporting files are in `agent/support/darwin`.
+This requires passing `--port <port>` to the agent.  `com.adroll.hologram-launchagent.plist` can be used instead of `com.adroll.hologram.plist`.  This uses port 16925, and can be placed in `[~ or root]/Library/LaunchAgents` and loaded with launchd.
+
+To configure the firewall, place `pf.hologram.conf` in `/etc/pf/`, and `hologram.rules` in `/etc/pf.anchors/`.  You can load these with `sudo pfctl -ef /etc/pf/pf.hologram.conf`, or place `com.adroll.hologram-pfctl.plist` in `/Library/LaunchDaemons/` and load it with launchd.
+
+You also must ensure the log file, `/var/log/hologram.log` is writable by the user.
+
 
 ## Deployment Suggestions
 At AdRoll we have Hologram deployed in a fault-tolerant setup, with the following:
