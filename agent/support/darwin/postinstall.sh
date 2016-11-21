@@ -28,4 +28,4 @@ fi
 # Load the services
 launchctl load -w /Library/LaunchDaemons/com.adroll.hologram-ip.plist
 launchctl load -w /Library/LaunchDaemons/com.adroll.hologram.plist
-launchctl load -w /Library/LaunchAgents/com.adroll.hologram-me.plist
+launchctl load -w /Library/LaunchDaemons/com.adroll.hologram-me.plist
