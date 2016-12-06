@@ -1,6 +1,9 @@
 #!/bin/sh
 # Remove the previous version of Hologram.
+launchctl unload -w /Library/LaunchDaemons/com.adroll.hologram-ip.plist
 launchctl unload -w /Library/LaunchDaemons/com.adroll.hologram.plist
+launchctl unload -w /Library/LaunchDaemons/com.adroll.hologram-me.plist
+launchctl unload -w /Library/LaunchAgents/com.adroll.hologram-me.plist
 
 # Remove previous (old location) hologram binaries if they exist
 if [ -f "/usr/bin/hologram-boot" ]; then
@@ -28,4 +31,4 @@ fi
 # Load the services
 launchctl load -w /Library/LaunchDaemons/com.adroll.hologram-ip.plist
 launchctl load -w /Library/LaunchDaemons/com.adroll.hologram.plist
-launchctl load -w /Library/LaunchDaemons/com.adroll.hologram-me.plist
+launchctl load -w /Library/LaunchAgents/com.adroll.hologram-me.plist
