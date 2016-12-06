@@ -48,12 +48,12 @@ func main() {
 		_, err := net.Dial("tcp", config.Host)
 		if err != nil {
 			// TODO: Better error handling. Exponential backoff if server is truly down
-			log.Println("Error connecting to server %v, (%s)", config.Host,  err.Error())
+			log.Println("Error connecting to server %v, (%s)", config.Host, err.Error())
 			continue
 		}
 
 		log.Println("Booting hologram...")
-		cmd := exec.Command("/usr/bin/hologram", "me")
+		cmd := exec.Command("/usr/local/bin/hologram", "me")
 		err = cmd.Run()
 		if err != nil {
 			log.Fatal("Error when starting up hologram", err)
