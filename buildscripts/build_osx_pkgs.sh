@@ -12,12 +12,14 @@ mkdir -p /hologram-build/darwin/{root,scripts}
 mkdir -p /hologram-build/darwin/root/usr/local/bin/
 mkdir -p /hologram-build/darwin/root/etc/hologram/
 mkdir -p /hologram-build/darwin/root/Library/LaunchDaemons
+mkdir -p /hologram-build/darwin/root/Library/LaunchAgents
 mkdir -p /hologram-build/darwin/scripts
 mkdir -p /hologram-build/darwin/flat/base.pkg/
 
 install -m 0755 ${BIN_DIR}/darwin_amd64/hologram{-agent,,-authorize,-boot} /hologram-build/darwin/root/usr/local/bin/
 install -m 0644 ${HOLOGRAM_DIR}/config/agent.json /hologram-build/darwin/root/etc/hologram/agent.json
-install -m 0644 ${HOLOGRAM_DIR}/agent/support/darwin/com.adroll.hologram{-ip,-me,}.plist /hologram-build/darwin/root/Library/LaunchDaemons/
+install -m 0644 ${HOLOGRAM_DIR}/agent/support/darwin/com.adroll.hologram{-ip,}.plist /hologram-build/darwin/root/Library/LaunchDaemons/
+install -m 0644 ${HOLOGRAM_DIR}/agent/support/darwin/com.adroll.hologram-me.plist /hologram-build/darwin/root/Library/LaunchAgents/
 install -m 0755 ${HOLOGRAM_DIR}/agent/support/darwin/postinstall.sh /hologram-build/darwin/scripts/postinstall
 install -m 0755 ${HOLOGRAM_DIR}/agent/support/darwin/preinstall.sh /hologram-build/darwin/scripts/preinstall
 
