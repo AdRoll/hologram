@@ -19,7 +19,7 @@ Your software interacts with Hologram in the same manner that you would a produc
 Hologram requires the following things to already be setup:
 
 * A Go development environment on one workstation, with `$GOPATH` already setup. A docker container (adroll/hologram_env) is provided that includes all dependencies and support for cross-compiling linux/osx binaries and building deb/osx packages. This container can be launched from the hologram.sh script, so you don't even need to have a working go environment to build and develop on hologram.
-* An LDAP server with `sshPublicKey` attributes on user records to store their SSH public keys.
+* An LDAP server with `sshPublicKey` attributes on user records to store their SSH public keys (configurable attribute name).
 * `ssh-agent` running on all workstations using Hologram Agent, configured to load the key you have stored in LDAP for that user.
 * An AWS account that you can administer IAM permissions in.
 * A "developer" IAM role or something similar that has the minimum permissions that you want your developers to have by default.
@@ -121,7 +121,7 @@ cd docker/server
 And it will build a base container that can be pushed to your favourite private docker registry, just add the config file and you're good to go!
 
 ### Rollout to Developers
-1. Import each developer's SSH key into LDAP. Hologram will search for their key in the `sshPublicKey` attribute.
+1. Import each developer's SSH key into LDAP. Hologram will search for their key in the `sshPublicKey` attribute by default.
 2. Install the `hologram-agent.pkg` installer you built before on each developer's workstation.
 
 ## Usage

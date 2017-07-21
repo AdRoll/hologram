@@ -19,23 +19,24 @@ type LDAP struct {
 		DN       string `json:"dn"`
 		Password string `json:"password"`
 	} `json:"bind"`
-	UserAttr     string `json:"userattr"`
-	BaseDN       string `json:"basedn"`
-	Host         string `json:"host"`
-	InsecureLDAP bool   `json:"insecureldap"`
+	UserAttr        string `json:"userattr"`
+	BaseDN          string `json:"basedn"`
+	Host            string `json:"host"`
+	InsecureLDAP    bool   `json:"insecureldap"`
 	EnableLDAPRoles bool   `json:"enableldaproles"`
 	RoleAttribute   string `json:"roleattr"`
 	DefaultRoleAttr string `json:"defaultroleattr"`
+	PubKeysAttr     string `json:"pubkeysattr"`
 }
 
 type Config struct {
 	LDAP LDAP `json:"ldap"`
-	AWS struct {
+	AWS  struct {
 		Account     string `json:"account"`
 		DefaultRole string `json:"defaultrole"`
 	} `json:"aws"`
-	Stats        string `json:"stats"`
-	Listen       string `json:"listen"`
-	CacheTimeout int    `json:"cachetimeout"`
-	AccountAliases   map[string]string `json:"accountAliases`
+	Stats          string            `json:"stats"`
+	Listen         string            `json:"listen"`
+	CacheTimeout   int               `json:"cachetimeout"`
+	AccountAliases map[string]string `json:"accountAliases"`
 }

@@ -30,8 +30,7 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 )
 
-// This key is pretty much guaranteed to be unique.
-var testKey = []byte(`-----BEGIN RSA PRIVATE KEY-----
+var testKeys = [][]byte{[]byte(`-----BEGIN RSA PRIVATE KEY-----
 MIIEpQIBAAKCAQEAsLS8C5biZsLZdZ50bPoWt5uc80wCjNEGmzS3vDYNrjO5Fuwv
 +jCpV7SaITyWaHyKExsC1iegFS0lCY/cxW8sKtYd+EA1p86v28bt8T68CuSKMsfN
 tU45IX69Fc/Pe8KoriToBPffYXUOEcJIrDGLZ5pDg1Oyl0DEPBuv4/BXRca/+z2x
@@ -57,14 +56,24 @@ Euiv6kwrqR9SNaDaYbKZbGSx79O7bDg1U9vm9Nr6L4OYxakSPhm2RrM4sS1R/OGh
 N8K3NG8CgYEArYm0fGucWB54qapCZ8FCqXWSTaYGR3oKtVQnEixgJJlg0oKl0E/X
 vKCUz2qQ/gPmrh7TVYOVuLnR6sPe6TxCIwKLJVkvBuzBo83NNzpLcCrOJsGlOwh2
 1JQOc8liilr0P0ajbnBR7h2g3Pr/hoNC2UyU5nUBwvOUaQfZeDtjzbs=
------END RSA PRIVATE KEY-----`)
+-----END RSA PRIVATE KEY-----`),
+	[]byte(`-----BEGIN RSA PRIVATE KEY-----
+MIIBPAIBAAJBAMwioem7niDILlnWDIcTOJ6m2l/JiL08zfTVmGW9T2EAW95DETW4
+Fcll6Az+0TJhQOZKjnKXfWZ4trwDuZp/DZkCAwEAAQJBAJzQqgMs7r+OKBU5GqyV
+NnSiBrV400NUN38yqnzVneoMBJPWf7MPEZt/rXgdisC9lYVjTTn5xohj5VrtcPFN
+hVECIQD8ZuBZKvNdBfPduQ1BvaSr38GZJmP1tuQozCknOHNZ/QIhAM8LnEhRjoSr
+s9rDwXZ81c/ospcg9D7k/CaTp7ksCVbNAiAN+fBgX6V8ODEpzO5z/nlY3xoMTfjp
+CUiXDb8VoeWZTQIhALXXVagycQBWqTzOxuBg3YyfrBKNr9Z5WHgtIJbCdWVVAiEA
+rfD3bxKdXn1zeU6JPkSQimu4rrwyR5Fwrc2NQeYNCrI=
+-----END RSA PRIVATE KEY-----`)}
 
 /*
 StubLDAPServer exists to test Hologram's LDAP integration without
 requiring an actual LDAP server.
 */
 type StubLDAPServer struct {
-	Keys []string
+	Keys      []string
+	OtherKeys []string
 }
 
 func (sls *StubLDAPServer) Search(s *ldap.SearchRequest) (*ldap.SearchResult, error) {
@@ -79,6 +88,10 @@ func (sls *StubLDAPServer) Search(s *ldap.SearchRequest) (*ldap.SearchResult, er
 					&ldap.EntryAttribute{
 						Name:   "sshPublicKey",
 						Values: sls.Keys,
+					},
+					&ldap.EntryAttribute{
+						Name:   "otherKeysAttribute",
+						Values: sls.OtherKeys,
 					},
 				},
 			},
@@ -109,7 +122,7 @@ func TestLDAPUserCache(t *testing.T) {
 			t.Skip()
 		}
 
-		c, err := net.Dial("unix", sshSock)
+		c, err := net.Dial("unix", sshSock) // ಠ_ಠ
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -122,13 +135,13 @@ func TestLDAPUserCache(t *testing.T) {
 		keyValue := base64.StdEncoding.EncodeToString(keys[0].Blob)
 
 		// Load in an additional key from the test data.
-		privateKey, _ := ssh.ParsePrivateKey(testKey)
+		privateKey, _ := ssh.ParsePrivateKey(testKeys[0])
 		testPublicKey := base64.StdEncoding.EncodeToString(privateKey.PublicKey().Marshal())
 
 		s := &StubLDAPServer{
 			Keys: []string{keyValue, testPublicKey},
 		}
-		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "")
+		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "sshPublicKey")
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
@@ -202,7 +215,7 @@ func TestLDAPUserCache(t *testing.T) {
 		s = &StubLDAPServer{
 			Keys: []string{testAuthorizedKey},
 		}
-		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "")
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "sshPublicKey")
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
@@ -215,6 +228,40 @@ func TestLDAPUserCache(t *testing.T) {
 			verifiedUser, err := lc.Authenticate("ericallen", challenge, sig)
 			So(verifiedUser, ShouldNotBeNil)
 			So(err, ShouldBeNil)
+		})
+
+		nonAuthorizedKey := testAuthorizedKey
+		otherPrivateKey, _ := ssh.ParsePrivateKey(testKeys[1])
+		testAuthorizedKey = string(ssh.MarshalAuthorizedKey(otherPrivateKey.PublicKey()))
+
+		s = &StubLDAPServer{
+			Keys:      []string{nonAuthorizedKey},
+			OtherKeys: []string{testAuthorizedKey},
+		}
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "otherKeysAttribute")
+		So(err, ShouldBeNil)
+		So(lc, ShouldNotBeNil)
+
+		Convey("A non-default ssh keys attribute should be respected", func() {
+			Convey("A signature using a key not in the target attribute should be rejected", func() {
+				challenge := randomBytes(64)
+				sig, err := privateKey.Sign(cryptrand.Reader, challenge)
+				if err != nil {
+					t.Fatal(err)
+				}
+				verifiedUser, _ := lc.Authenticate("xyzzy", challenge, sig)
+				So(verifiedUser, ShouldBeNil)
+			})
+			Convey("A signature using a key in the target attribute should be accepted", func() {
+				challenge := randomBytes(64)
+				sig, err := otherPrivateKey.Sign(cryptrand.Reader, challenge)
+				if err != nil {
+					t.Fatal(err)
+				}
+				verifiedUser, err := lc.Authenticate("xyzzy", challenge, sig)
+				So(err, ShouldBeNil)
+				So(verifiedUser, ShouldNotBeNil)
+			})
 		})
 	})
 }
