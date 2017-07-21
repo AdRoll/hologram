@@ -15,13 +15,14 @@
 package main
 
 import (
-	. "github.com/smartystreets/goconvey/convey"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 func TestAuthorize(t *testing.T) {
 	Convey("loadConfig errors on empty agent.json", t, func() {
-		_, err := loadConfig()
+		_, err := loadConfig("/nonexistent/hologram/agent.json")
 		So(err, ShouldNotBeNil)
 	})
 }

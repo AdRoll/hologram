@@ -48,8 +48,8 @@ type client struct {
 
 type accessKeyClient struct {
 	credentialService server.CredentialService
-	iamUsername string
-	cr          CredentialsReceiver
+	iamUsername       string
+	cr                CredentialsReceiver
 }
 
 func AccessKeyClient(cr CredentialsReceiver, accountAliases *map[string]string) *accessKeyClient {
@@ -69,8 +69,8 @@ func AccessKeyClient(cr CredentialsReceiver, accountAliases *map[string]string) 
 	credentialService := server.NewDirectSessionTokenService(iamAccount, sts, accountAliases)
 	c := &accessKeyClient{
 		credentialService: credentialService,
-		iamUsername: *iamUsername,
-		cr:          cr,
+		iamUsername:       *iamUsername,
+		cr:                cr,
 	}
 	if cr != nil {
 		cr.SetClient(c)
@@ -78,10 +78,9 @@ func AccessKeyClient(cr CredentialsReceiver, accountAliases *map[string]string) 
 	return c
 }
 
-
 func (c *accessKeyClient) AssumeRole(role string) error {
 	user := server.User{
-		Username:c.iamUsername,
+		Username: c.iamUsername,
 	}
 	response, err := c.credentialService.AssumeRole(&user, role, false)
 

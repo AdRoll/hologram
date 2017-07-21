@@ -48,7 +48,7 @@ func main() {
 		_, err := net.Dial("tcp", config.Host)
 		if err != nil {
 			// TODO: Better error handling. Exponential backoff if server is truly down
-			log.Println("Error connecting to server %v, (%s)", config.Host, err.Error())
+			log.Printf("Error connecting to server %v, (%s)\n", config.Host, err.Error())
 			continue
 		}
 

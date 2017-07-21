@@ -2,11 +2,10 @@ package server_test
 
 import (
 	"testing"
+
 	"github.com/AdRoll/hologram/server"
 	. "github.com/smartystreets/goconvey/convey"
 )
-
-
 
 func TestBuildARN(t *testing.T) {
 	aliases := map[string]string{

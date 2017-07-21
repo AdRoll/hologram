@@ -88,20 +88,21 @@ func getUserHomeDirSSHKey() string {
 	return ""
 }
 
-func loadConfig() (Config, error) {
+func loadConfig(configPath string) (Config, error) {
 	// Figure out which Hologram server we need.
-	configContents, _ := ioutil.ReadFile("/etc/hologram/agent.json")
+	configContents, _ := ioutil.ReadFile(configPath)
 	var config Config
 
 	json.Unmarshal(configContents, &config)
-	if config.Host == "" || config.Host == "" {
+	if config.Host == "" {
 		return config, fmt.Errorf("hologram server (host) is not set")
 	}
 	return config, nil
 }
 
 func main() {
-	config, err := loadConfig()
+	configPath := "/etc/hologram/agent.json"
+	config, err := loadConfig(configPath)
 	if err != nil {
 		fmt.Printf("Error loading /etc/hologram/agent.json: %s\n", err)
 		os.Exit(1)
