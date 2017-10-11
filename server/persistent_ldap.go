@@ -43,7 +43,7 @@ func (pl *persistentLDAP) Search(searchRequest *ldap.SearchRequest) (*ldap.Searc
 }
 
 func (pl *persistentLDAP) Modify(modifyRequest *ldap.ModifyRequest) error {
-  if err := pl.conn.Modify(modifyRequest); err != nil && err.(*ldap.Error).ResultCode == ldap.ErrorNetwork {
+	if err := pl.conn.Modify(modifyRequest); err != nil && err.(*ldap.Error).ResultCode == ldap.ErrorNetwork {
 		pl.Refresh()
 		return pl.conn.Modify(modifyRequest)
 	} else {
