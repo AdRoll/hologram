@@ -16,6 +16,7 @@ package server
 
 import (
 	"encoding/base64"
+	"fmt"
 	"time"
 
 	"github.com/AdRoll/hologram/log"
@@ -67,6 +68,7 @@ type ldapUserCache struct {
 	roleAttribute   string
 	defaultRole     string
 	defaultRoleAttr string
+	groupClassAttr  string
 }
 
 /*
@@ -83,7 +85,7 @@ func (luc *ldapUserCache) Update() error {
 			luc.baseDN,
 			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 			0, 0, false,
-			"(objectClass=groupOfNames)",
+			fmt.Sprintf("(objectClass=%s)", luc.groupClassAttr),
 			[]string{luc.roleAttribute},
 			nil,
 		)
@@ -199,7 +201,7 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 /*
 	NewLDAPUserCache returns a properly-configured LDAP cache.
 */
-func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string) (*ldapUserCache, error) {
+func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string, groupClassAttr string) (*ldapUserCache, error) {
 	retCache := &ldapUserCache{
 		users:           map[string]*User{},
 		groups:          map[string][]string{},
@@ -211,6 +213,7 @@ func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr str
 		roleAttribute:   roleAttribute,
 		defaultRole:     defaultRole,
 		defaultRoleAttr: defaultRoleAttr,
+		groupClassAttr:  groupClassAttr,
 	}
 
 	updateError := retCache.Update()
