@@ -172,7 +172,7 @@ The user must have permission to iam:GetUser on itself(resource "arn:aws:iam::AC
 
 ### LDAP Based Roles
 
-Hologram supports assigning roles based on a user's LDAP group. Roles can be turned on by setting the `enableLDAPRoles` key to `true` in `config/server.json`.
+Hologram supports assigning roles based on a user's LDAP group. Roles can be turned on by setting the `enableLDAPRoles` key to `true` in `config/server.json`. By default, Hologram will only search for groups that have an `objectclass` attribute of `groupOfNames`. To change this, set the `groupClassAttr` in your `config/server/json` to the correct objectclass.
 
 An LDAP group attribute will have to be chosen for user roles. By default `businessCategory` is chosen for this role since it is part of the core LDAP schema. The attribute used can be modified by editing the `roleAttribute` key in `config/server.json`. The value of this attribute should be the name of the group's role in AWS.
 

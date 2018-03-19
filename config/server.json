@@ -8,8 +8,9 @@
     "userattr": "cn",
     "basedn": "dc=domain,dc=local",
     "enableldaproles": false,
-    "roleattr": "businessCategory"
-    "defaultroleattr": "employeeType"
+    "roleattr": "businessCategory",
+    "defaultroleattr": "employeeType",
+    "groupclassattr": "groupOfNames"
   },
   "aws": {
     "account":      "123456789010",
