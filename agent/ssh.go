@@ -39,7 +39,7 @@ func SSHSetAgentSock(socketAddressFromCli string, sshKeyFromCli []byte) {
 	if sshKeyFromCli != nil {
 		sshKey, keyErr := ssh.ParsePrivateKey(sshKeyFromCli)
 		if keyErr != nil {
-			log.Errorf("Could not parse SSH key given by the CLI.")
+			log.Errorf("Could not parse SSH key given by the CLI. %s", keyErr)
 		} else {
 			providedSSHKey = sshKey
 		}
