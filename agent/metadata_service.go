@@ -62,8 +62,9 @@ func makeSecure(handler func(http.ResponseWriter, *http.Request)) func(http.Resp
 
 		// Must make sure the remote ip is localhost, otherwise clients on the same network segment could
 		// potentially route traffic via 169.254.169.254:80
-		if ip != `127.0.0.1` {
-			http.Error(w, "Access denied from non-localhost address", http.StatusUnauthorized)
+		if ip != `127.0.0.1` && ip != `169.254.169.254` {
+			msg := fmt.Sprintf("Access denied from non-localhost address: %s", ip)
+			http.Error(w, msg, http.StatusUnauthorized)
 			return
 		}
 		handler(w, r)
