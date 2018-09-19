@@ -52,18 +52,37 @@ func (mds *metadataService) Start() error {
 	return nil
 }
 
+func makeSecure(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Must make sure the remote ip is localhost, otherwise clients on the same network segment could
+		// potentially route traffic via 169.254.169.254:80
+		if ip != `127.0.0.1` && ip != `169.254.169.254` {
+			msg := fmt.Sprintf("Access denied from non-localhost address: %s", ip)
+			http.Error(w, msg, http.StatusUnauthorized)
+			return
+		}
+		handler(w, r)
+	}
+}
+
 /*
 This actually creates the HTTP listener and blocks on it.
 Spawned in the background.
 */
 func (mds *metadataService) listen() {
 	handler := http.NewServeMux()
-	handler.HandleFunc("/latest", mds.getServices)
-	handler.HandleFunc("/latest/meta-data/iam/security-credentials/", mds.enumerateRoles)
-	handler.HandleFunc("/latest/meta-data/iam/security-credentials/hologram-access", mds.getCredentials)
-	handler.HandleFunc("/latest/meta-data/instance-id", mds.getInstanceID)
-	handler.HandleFunc("/latest/meta-data/placement/availability-zone", mds.getAvailabilityZone)
-	handler.HandleFunc("/latest/meta-data/public-hostname", mds.getPublicDNS)
+	handler.HandleFunc("/latest", makeSecure(mds.getServices))
+	handler.HandleFunc("/latest/meta-data/iam/security-credentials/", makeSecure(mds.enumerateRoles))
+	handler.HandleFunc("/latest/meta-data/iam/security-credentials/hologram-access", makeSecure(mds.getCredentials))
+	handler.HandleFunc("/latest/meta-data/instance-id", makeSecure(mds.getInstanceID))
+	handler.HandleFunc("/latest/meta-data/placement/availability-zone", makeSecure(mds.getAvailabilityZone))
+	handler.HandleFunc("/latest/meta-data/public-hostname", makeSecure(mds.getPublicDNS))
 
 	err := http.Serve(mds.listener, handler)
 

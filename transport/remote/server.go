@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"net"
 
+	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
 )
 
@@ -58,16 +59,19 @@ TLS, and automatically starts that server.
 func NewServer(address string, handler protocol.ConnectionHandlerFunc) (retServer *server, err error) {
 	cert, err := Asset("self-signed.cert")
 	if err != nil {
+		log.Errorf("cert %s", err)
 		return nil, err
 	}
 
 	key, err := Asset("self-signed.key")
 	if err != nil {
+		log.Errorf("key %s", err)
 		return nil, err
 	}
 
 	serverCert, err := tls.X509KeyPair(cert, key)
 	if err != nil {
+		log.Errorf("keypair %s", err)
 		return nil, err
 	}
 

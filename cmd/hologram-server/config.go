@@ -26,6 +26,7 @@ type LDAP struct {
 	EnableLDAPRoles bool   `json:"enableldaproles"`
 	RoleAttribute   string `json:"roleattr"`
 	DefaultRoleAttr string `json:"defaultroleattr"`
+	GroupClassAttr  string `json:"groupclassattr"`
 	PubKeysAttr     string `json:"pubkeysattr"`
 }
 

@@ -76,6 +76,7 @@ func main() {
 		enableLDAPRoles  = flag.Bool("ldaproles", false, "Enable role support using LDAP directory.")
 		roleAttribute    = flag.String("roleattribute", "", "Group attribute to get role from.")
 		defaultRoleAttr  = flag.String("defaultroleattr", "", "User attribute to check to determine a user's default role.")
+		groupClassAttr   = flag.String("groupclassattr", "", "LDAP objectclass to determine the groups in LDAP.")
 		defaultRole      = flag.String("role", "", "AWS role to assume by default.")
 		configFile       = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
 		cacheTimeout     = flag.Int("cachetime", 3600, "Time in seconds after which to refresh LDAP user cache.")
@@ -151,6 +152,12 @@ func main() {
 		config.LDAP.RoleAttribute = *roleAttribute
 	}
 
+	if *groupClassAttr != "" {
+		config.LDAP.GroupClassAttr = *groupClassAttr
+	} else if config.LDAP.GroupClassAttr == "" {
+		config.LDAP.GroupClassAttr = "groupOfNames"
+	}
+
 	if *cacheTimeout != 3600 {
 		config.CacheTimeout = *cacheTimeout
 	}
@@ -190,7 +197,7 @@ func main() {
 
 	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN,
 		config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr,
-		config.LDAP.PubKeysAttr)
+		config.LDAP.GroupClassAttr, config.LDAP.PubKeysAttr)
 	if err != nil {
 		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
 		os.Exit(1)

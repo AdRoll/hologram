@@ -16,10 +16,11 @@
 package main
 
 import (
-	"flag"
-	"fmt"
 	"crypto/tls"
 	"crypto/x509"
+	"flag"
+	"fmt"
+
 	"github.com/AdRoll/hologram/protocol"
 )
 
