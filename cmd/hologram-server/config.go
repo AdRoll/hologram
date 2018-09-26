@@ -27,6 +27,7 @@ type LDAP struct {
 	RoleAttribute   string `json:"roleattr"`
 	DefaultRoleAttr string `json:"defaultroleattr"`
 	GroupClassAttr  string `json:"groupclassattr"`
+	PubKeysAttr     string `json:"pubkeysattr"`
 }
 
 type Config struct {
@@ -38,5 +39,5 @@ type Config struct {
 	Stats          string            `json:"stats"`
 	Listen         string            `json:"listen"`
 	CacheTimeout   int               `json:"cachetimeout"`
-	AccountAliases map[string]string `json:"accountAliases`
+	AccountAliases map[string]string `json:"accountAliases"`
 }

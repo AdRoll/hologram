@@ -69,6 +69,7 @@ type ldapUserCache struct {
 	defaultRole     string
 	defaultRoleAttr string
 	groupClassAttr  string
+	pubKeysAttr     string
 }
 
 /*
@@ -103,12 +104,12 @@ func (luc *ldapUserCache) Update() error {
 		}
 	}
 
-	filter := "(sshPublicKey=*)"
+	filter := fmt.Sprintf("(%s=*)", luc.pubKeysAttr)
 	searchRequest := ldap.NewSearchRequest(
 		luc.baseDN,
 		ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 		0, 0, false,
-		filter, []string{"sshPublicKey", luc.userAttr, "memberOf", luc.defaultRoleAttr},
+		filter, []string{luc.pubKeysAttr, luc.userAttr, "memberOf", luc.defaultRoleAttr},
 		nil,
 	)
 
@@ -119,17 +120,16 @@ func (luc *ldapUserCache) Update() error {
 	for _, entry := range searchResult.Entries {
 		username := entry.GetAttributeValue(luc.userAttr)
 		userKeys := []ssh.PublicKey{}
-		for _, eachKey := range entry.GetAttributeValues("sshPublicKey") {
+		for _, eachKey := range entry.GetAttributeValues(luc.pubKeysAttr) {
 			sshKeyBytes, _ := base64.StdEncoding.DecodeString(eachKey)
 			userSSHKey, err := ssh.ParsePublicKey(sshKeyBytes)
 			if err != nil {
 				userSSHKey, _, _, _, err = ssh.ParseAuthorizedKey([]byte(eachKey))
 				if err != nil {
-					log.Warning("SSH key parsing for user %s failed (key was '%s')! This key will not be added into LDAP.", username, eachKey)
+					log.Warning("SSH key parsing for user %s failed (key was '%s')!", username, eachKey)
 					continue
 				}
 			}
-
 			userKeys = append(userKeys, userSSHKey)
 		}
 
@@ -201,7 +201,7 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 /*
 	NewLDAPUserCache returns a properly-configured LDAP cache.
 */
-func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string, groupClassAttr string) (*ldapUserCache, error) {
+func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string, groupClassAttr string, pubKeysAttr string) (*ldapUserCache, error) {
 	retCache := &ldapUserCache{
 		users:           map[string]*User{},
 		groups:          map[string][]string{},
@@ -214,6 +214,7 @@ func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr str
 		defaultRole:     defaultRole,
 		defaultRoleAttr: defaultRoleAttr,
 		groupClassAttr:  groupClassAttr,
+		pubKeysAttr:     pubKeysAttr,
 	}
 
 	updateError := retCache.Update()

@@ -47,6 +47,7 @@ type server struct {
 	baseDN          string
 	enableLDAPRoles bool
 	defaultRoleAttr string
+	pubKeysAttr     string
 }
 
 /*
@@ -175,7 +176,7 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 			sm.baseDN,
 			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases, 0, 0, false,
 			fmt.Sprintf("(%s=%s)", sm.userAttr, addSSHKeyMsg.GetUsername()),
-			[]string{"sshPublicKey", sm.userAttr, "userPassword"},
+			[]string{sm.pubKeysAttr, sm.userAttr, "userPassword"},
 			nil)
 
 		user, err := sm.ldapServer.Search(sr)
@@ -200,17 +201,17 @@ func (sm *server) HandleServerRequest(m protocol.MessageReadWriteCloser, r *prot
 		}
 
 		// Check to see if this SSH key already exists.
-		for _, k := range user.Entries[0].GetAttributeValues("sshPublicKey") {
+		for _, k := range user.Entries[0].GetAttributeValues(sm.pubKeysAttr) {
 			if k == addSSHKeyMsg.GetSshkeybytes() {
 				log.Warning("User %s already has this SSH key. Doing nothing.", addSSHKeyMsg.GetUsername())
-				successMsg := protocol.Message{Success:&protocol.Success{}}
+				successMsg := protocol.Message{Success: &protocol.Success{}}
 				m.Write(&successMsg)
 				return
 			}
 		}
 
 		mr := ldap.NewModifyRequest(user.Entries[0].DN)
-		mr.Add("sshPublicKey", []string{addSSHKeyMsg.GetSshkeybytes()})
+		mr.Add(sm.pubKeysAttr, []string{addSSHKeyMsg.GetSshkeybytes()})
 		err = sm.ldapServer.Modify(mr)
 		if err != nil {
 			log.Errorf("Could not modify LDAP user: %s", err.Error())
@@ -315,7 +316,8 @@ func New(userCache UserCache,
 	userAttr string,
 	baseDN string,
 	enableLDAPRoles bool,
-	defaultRoleAttr string) *server {
+	defaultRoleAttr string,
+	pubKeysAttr string) *server {
 	return &server{
 		credentials:     credentials,
 		authenticator:   userCache,
@@ -327,5 +329,6 @@ func New(userCache UserCache,
 		baseDN:          baseDN,
 		enableLDAPRoles: enableLDAPRoles,
 		defaultRoleAttr: defaultRoleAttr,
+		pubKeysAttr:     pubKeysAttr,
 	}
 }
