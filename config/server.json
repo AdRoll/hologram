@@ -10,7 +10,8 @@
     "enableldaproles": false,
     "roleattr": "businessCategory",
     "defaultroleattr": "employeeType",
-    "groupclassattr": "groupOfNames"
+    "groupclassattr": "groupOfNames",
+    "pubkeysattr": "sshPublicKey"
   },
   "aws": {
     "account":      "123456789010",

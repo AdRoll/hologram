@@ -81,7 +81,7 @@ func main() {
 		configFile       = flag.String("conf", "/etc/hologram/server.json", "Config file to load.")
 		cacheTimeout     = flag.Int("cachetime", 3600, "Time in seconds after which to refresh LDAP user cache.")
 		debugMode        = flag.Bool("debug", false, "Enable debug mode.")
-		pubKeysAttr      = flag.String("pubkeysattr", "sshPublicKey", "Name of the LDAP user attribute containing ssh public key data.")
+		pubKeysAttr      = flag.String("pubkeysattr", "", "Name of the LDAP user attribute containing ssh public key data.")
 		config           Config
 	)
 
@@ -158,6 +158,12 @@ func main() {
 		config.LDAP.GroupClassAttr = "groupOfNames"
 	}
 
+	if *pubKeysAttr != "" {
+		config.LDAP.PubKeysAttr = *pubKeysAttr
+	} else if config.LDAP.PubKeysAttr == "" {
+		config.LDAP.PubKeysAttr = "sshPublicKey"
+	}
+
 	if *cacheTimeout != 3600 {
 		config.CacheTimeout = *cacheTimeout
 	}
@@ -168,8 +174,6 @@ func main() {
 	if config.LDAP.UserAttr == "" {
 		config.LDAP.UserAttr = "cn"
 	}
-
-	config.LDAP.PubKeysAttr = *pubKeysAttr
 
 	if config.Stats == "" {
 		log.Debug("No statsd server specified; no metrics will be emitted by this program.")
