@@ -112,6 +112,17 @@ func TestMetadataService(t *testing.T) {
 			So(err, ShouldBeNil)
 			So(response.StatusCode, ShouldEqual, 500)
 		})
+
+		Convey("It should return a 401 if the request host is external", func() {
+			// Craft a request and set the Host to something external
+			client := &http.Client{}
+			url := fmt.Sprintf("http://localhost:%v/latest/meta-data/iam/security-credentials/hologram-access", service.Port())
+			req, _ := http.NewRequest("GET", url, nil)
+			req.Host = "attacker.com"
+			res, err := client.Do(req)
+			So(err, ShouldBeNil)
+			So(res.StatusCode, ShouldEqual, http.StatusUnauthorized)
+		})
 	})
 }
 
