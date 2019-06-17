@@ -52,7 +52,7 @@ func (mds *metadataService) Start() error {
 	return nil
 }
 
-func makeSecure(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func makeSecure(handler func(http.ResponseWriter, *http.Request), mds *metadataService) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
@@ -67,6 +67,23 @@ func makeSecure(handler func(http.ResponseWriter, *http.Request)) func(http.Resp
 			http.Error(w, msg, http.StatusUnauthorized)
 			return
 		}
+
+		// Host should always be the listener address (usually 169.254.169.254)
+		expectedHost := mds.listener.Addr().String()
+		// Substitute localhost for [::]
+		expectedHost = strings.Replace(expectedHost, "[::]", "localhost", 1)
+		// Strip the port from the listener address
+		expectedHost = strings.Split(expectedHost, ":")[0]
+
+		// Strip port number from host address
+		actualHost := strings.Split(r.Host, ":")[0]
+		if actualHost != expectedHost {
+			msg := fmt.Sprintf("Access denied from bad host: %s", r.Host)
+			fmt.Println(msg)
+			http.Error(w, msg, http.StatusUnauthorized)
+			return
+		}
+
 		handler(w, r)
 	}
 }
@@ -77,12 +94,12 @@ Spawned in the background.
 */
 func (mds *metadataService) listen() {
 	handler := http.NewServeMux()
-	handler.HandleFunc("/latest", makeSecure(mds.getServices))
-	handler.HandleFunc("/latest/meta-data/iam/security-credentials/", makeSecure(mds.enumerateRoles))
-	handler.HandleFunc("/latest/meta-data/iam/security-credentials/hologram-access", makeSecure(mds.getCredentials))
-	handler.HandleFunc("/latest/meta-data/instance-id", makeSecure(mds.getInstanceID))
-	handler.HandleFunc("/latest/meta-data/placement/availability-zone", makeSecure(mds.getAvailabilityZone))
-	handler.HandleFunc("/latest/meta-data/public-hostname", makeSecure(mds.getPublicDNS))
+	handler.HandleFunc("/latest", makeSecure(mds.getServices, mds))
+	handler.HandleFunc("/latest/meta-data/iam/security-credentials/", makeSecure(mds.enumerateRoles, mds))
+	handler.HandleFunc("/latest/meta-data/iam/security-credentials/hologram-access", makeSecure(mds.getCredentials, mds))
+	handler.HandleFunc("/latest/meta-data/instance-id", makeSecure(mds.getInstanceID, mds))
+	handler.HandleFunc("/latest/meta-data/placement/availability-zone", makeSecure(mds.getAvailabilityZone, mds))
+	handler.HandleFunc("/latest/meta-data/public-hostname", makeSecure(mds.getPublicDNS, mds))
 
 	err := http.Serve(mds.listener, handler)
 
