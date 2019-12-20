@@ -35,6 +35,11 @@ type User struct {
 	DefaultRole string
 }
 
+type Group struct {
+	ARNs    []string
+	timeout int64
+}
+
 /*
 UserCache implementers provide information about registered users.
 */
@@ -59,7 +64,7 @@ ldapUserCache connects to LDAP and pulls user settings from it.
 */
 type ldapUserCache struct {
 	users           map[string]*User
-	groups          map[string][]string
+	groups          map[string]*Group
 	server          LDAPImplementation
 	stats           g2s.Statter
 	userAttr        string
@@ -70,6 +75,7 @@ type ldapUserCache struct {
 	defaultRoleAttr string
 	groupClassAttr  string
 	pubKeysAttr     string
+	roleTimeoutAttr string
 }
 
 /*
@@ -82,6 +88,7 @@ been recently added to LDAP work, instead of requiring a server restart.
 func (luc *ldapUserCache) Update() error {
 	start := time.Now()
 	if luc.enableLDAPRoles {
+		// Search for groups and their members
 		groupSearchRequest := ldap.NewSearchRequest(
 			luc.baseDN,
 			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
@@ -98,9 +105,18 @@ func (luc *ldapUserCache) Update() error {
 
 		for _, entry := range groupSearchResult.Entries {
 			dn := entry.DN
-			arns := entry.GetAttributeValues(luc.roleAttribute)
+			ARNs := entry.GetAttributeValues(luc.roleAttribute)
+
+			role_timeout := int64(3600)
+			if luc.roleTimeoutAttr != "" {
+				role_timeout = int64(entry.GetAttributeValues(luc.roleTimeoutAttr))
+			}
+
 			log.Debug("Adding %s to %s", arns, dn)
-			luc.groups[dn] = arns
+			luc.groups[dn] = &Group{
+				ARNs:    ARNs,
+				timeout: role_timeout,
+			}
 		}
 	}
 
@@ -142,7 +158,7 @@ func (luc *ldapUserCache) Update() error {
 			}
 			for _, groupDN := range entry.GetAttributeValues("memberOf") {
 				log.Debug(groupDN)
-				arns = append(arns, luc.groups[groupDN]...)
+				arns = append(arns, luc.groups[groupDN].ARNs...)
 			}
 		}
 

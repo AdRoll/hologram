@@ -48,6 +48,7 @@ type server struct {
 	enableLDAPRoles bool
 	defaultRoleAttr string
 	pubKeysAttr     string
+	roleTimeoutAttr string
 }
 
 /*
@@ -317,7 +318,8 @@ func New(userCache UserCache,
 	baseDN string,
 	enableLDAPRoles bool,
 	defaultRoleAttr string,
-	pubKeysAttr string) *server {
+	pubKeysAttr string,
+	roleTimeoutAttr string) *server {
 	return &server{
 		credentials:     credentials,
 		authenticator:   userCache,
@@ -330,5 +332,6 @@ func New(userCache UserCache,
 		enableLDAPRoles: enableLDAPRoles,
 		defaultRoleAttr: defaultRoleAttr,
 		pubKeysAttr:     pubKeysAttr,
+		roleTimeoutAttr: roleTimeoutAttr,
 	}
 }
