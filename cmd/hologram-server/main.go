@@ -166,8 +166,8 @@ func main() {
 	}
 
 	if *roleTimeoutAttr != "" {
-		config.LDAP.RoleAttribute = *roleTimeoutAttr
-	} else if config.LDAP.RoleAttribute == "" {
+		config.LDAP.RoleTimeoutAttr = *roleTimeoutAttr
+	} else if config.LDAP.RoleTimeoutAttr == "" {
 		config.LDAP.RoleTimeoutAttr = ""
 	}
 
@@ -208,7 +208,7 @@ func main() {
 
 	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN,
 		config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr,
-		config.LDAP.GroupClassAttr, config.LDAP.PubKeysAttr)
+		config.LDAP.GroupClassAttr, config.LDAP.PubKeysAttr, config.LDAP.RoleTimeoutAttr)
 	if err != nil {
 		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
 		os.Exit(1)

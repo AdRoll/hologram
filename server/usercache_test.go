@@ -141,7 +141,7 @@ func TestLDAPUserCache(t *testing.T) {
 		s := &StubLDAPServer{
 			Keys: []string{keyValue, testPublicKey},
 		}
-		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "sshPublicKey")
+		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "sshPublicKey", "")
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
@@ -215,7 +215,7 @@ func TestLDAPUserCache(t *testing.T) {
 		s = &StubLDAPServer{
 			Keys: []string{testAuthorizedKey},
 		}
-		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "sshPublicKey")
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "sshPublicKey", "")
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
@@ -238,7 +238,7 @@ func TestLDAPUserCache(t *testing.T) {
 			Keys:      []string{nonAuthorizedKey},
 			OtherKeys: []string{testAuthorizedKey},
 		}
-		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "otherKeysAttribute")
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "otherKeysAttribute", "")
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 

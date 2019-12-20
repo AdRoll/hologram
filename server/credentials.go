@@ -85,17 +85,21 @@ func BuildARN(role string, defaultAccount string, accountAliases *map[string]str
 }
 
 func (s *directSessionTokenService) AssumeRole(user *User, role string, enableLDAPRoles bool) (*sts.Credentials, error) {
-	var arn string = BuildARN(role, s.iamAccount, s.accountAliases)
+	var arn = BuildARN(role, s.iamAccount, s.accountAliases)
 
 	log.Debug("Checking ARN %s against user %s (with access %s)", arn, user.Username, enableLDAPRoles)
 
+	timeout := int64(3600)
 	if enableLDAPRoles {
 		found := false
-		for _, a := range user.ARNs {
-			a = BuildARN(a, s.iamAccount, s.accountAliases)
-			if arn == a {
-				found = true
-				break
+		for _, group := range user.Groups {
+			for _, a := range group.ARNs {
+				a = BuildARN(a, s.iamAccount, s.accountAliases)
+				if arn == a {
+					found = true
+					timeout = group.timeout
+					break
+				}
 			}
 		}
 
@@ -106,9 +110,8 @@ func (s *directSessionTokenService) AssumeRole(user *User, role string, enableLD
 		}
 	}
 	log.Debug("User: %s", user.Username)
-	duration := int64(3600)
 	options := &sts.AssumeRoleInput{
-		DurationSeconds: &duration,
+		DurationSeconds: &timeout,
 		RoleArn:         &arn,
 		RoleSessionName: &user.Username,
 	}
