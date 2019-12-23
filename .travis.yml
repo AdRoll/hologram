@@ -2,7 +2,6 @@ language: go
 
 go:
   - 1.7
-  - tip
 
 install:
   - git clone https://github.com/pote/gpm.git && cd gpm && ./configure
