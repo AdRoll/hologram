@@ -38,7 +38,7 @@ type User struct {
 
 type Group struct {
 	ARNs    []string
-	timeout int64
+	Timeout int64
 }
 
 /*
@@ -117,16 +117,17 @@ func (luc *ldapUserCache) Update() error {
 					timeoutStr := entries[0]
 					timeout, err = strconv.ParseInt(timeoutStr, 10, 64)
 					if err != nil {
+						// Default back to a 1 hour Timeout if there is a parsing error
 						timeout = int64(3600)
-						log.Warning("Encountered error parsing timeout %s on group %s", timeoutStr, dn)
+						log.Warning("Encountered error parsing Timeout %s on group %s", timeoutStr, dn)
 					}
 				}
 			}
 
-			log.Debug("Adding %s to %s with timeout %d", ARNs, dn, timeout)
+			log.Debug("Adding %s to %s with Timeout %d", ARNs, dn, timeout)
 			luc.groups[dn] = &Group{
 				ARNs:    ARNs,
-				timeout: timeout,
+				Timeout: timeout,
 			}
 		}
 	}
@@ -190,6 +191,10 @@ func (luc *ldapUserCache) Update() error {
 
 func (luc *ldapUserCache) Users() map[string]*User {
 	return luc.users
+}
+
+func (luc *ldapUserCache) Groups() map[string]*Group {
+	return luc.groups
 }
 
 func (luc *ldapUserCache) _verify(username string, challenge []byte, sshSig *ssh.Signature) (

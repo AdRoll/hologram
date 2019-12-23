@@ -97,7 +97,7 @@ func (s *directSessionTokenService) AssumeRole(user *User, role string, enableLD
 				a = BuildARN(a, s.iamAccount, s.accountAliases)
 				if arn == a {
 					found = true
-					timeout = group.timeout
+					timeout = group.Timeout
 					break
 				}
 			}
