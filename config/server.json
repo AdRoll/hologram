@@ -12,7 +12,7 @@
     "defaultroleattr": "employeeType",
     "groupclassattr": "groupOfNames",
     "pubkeysattr": "sshPublicKey",
-    "roletimeoutattr": "description"
+    "roletimeoutattr": "timeoutAttribute"
   },
   "aws": {
     "account":      "123456789010",
