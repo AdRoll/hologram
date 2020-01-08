@@ -139,7 +139,7 @@ func TestServerStateMachine(t *testing.T) {
 			sshKeys:  []string{},
 			req:      neededModifyRequest,
 		}
-		testServer := server.New(authenticator, &dummyCredentials{}, "default", g2s.Noop(), ldap, "cn", "dc=testdn,dc=com", false, "", "sshPublicKey")
+		testServer := server.New(authenticator, &dummyCredentials{}, "default", g2s.Noop(), ldap, "cn", "dc=testdn,dc=com", false, "", "sshPublicKey", "ref")
 		r, w := io.Pipe()
 
 		testConnection := protocol.NewMessageConnection(ReadWriter(r, w))

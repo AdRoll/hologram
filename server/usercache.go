@@ -18,6 +18,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"time"
+	"strconv"
 
 	"github.com/AdRoll/hologram/log"
 	"github.com/nmcclain/ldap"
@@ -31,8 +32,13 @@ User represents information about a user stored in the cache.
 type User struct {
 	Username    string
 	SSHKeys     []ssh.PublicKey
-	ARNs        []string
+	Groups      []*Group
 	DefaultRole string
+}
+
+type Group struct {
+	ARNs    []string
+	Timeout int64
 }
 
 /*
@@ -59,7 +65,7 @@ ldapUserCache connects to LDAP and pulls user settings from it.
 */
 type ldapUserCache struct {
 	users           map[string]*User
-	groups          map[string][]string
+	groups          map[string]*Group
 	server          LDAPImplementation
 	stats           g2s.Statter
 	userAttr        string
@@ -70,6 +76,7 @@ type ldapUserCache struct {
 	defaultRoleAttr string
 	groupClassAttr  string
 	pubKeysAttr     string
+	roleTimeoutAttr string
 }
 
 /*
@@ -82,12 +89,13 @@ been recently added to LDAP work, instead of requiring a server restart.
 func (luc *ldapUserCache) Update() error {
 	start := time.Now()
 	if luc.enableLDAPRoles {
+		// Search for groups and their members
 		groupSearchRequest := ldap.NewSearchRequest(
 			luc.baseDN,
 			ldap.ScopeWholeSubtree, ldap.NeverDerefAliases,
 			0, 0, false,
 			fmt.Sprintf("(objectClass=%s)", luc.groupClassAttr),
-			[]string{luc.roleAttribute},
+			[]string{luc.roleAttribute, luc.roleTimeoutAttr},
 			nil,
 		)
 
@@ -98,9 +106,29 @@ func (luc *ldapUserCache) Update() error {
 
 		for _, entry := range groupSearchResult.Entries {
 			dn := entry.DN
-			arns := entry.GetAttributeValues(luc.roleAttribute)
-			log.Debug("Adding %s to %s", arns, dn)
-			luc.groups[dn] = arns
+			ARNs := entry.GetAttributeValues(luc.roleAttribute)
+
+			timeout := int64(3600)
+			if luc.roleTimeoutAttr != "" {
+				entries := entry.GetAttributeValues(luc.roleTimeoutAttr)
+				if len(entries) != 0 {
+					// If the attribute has been defined on the group, fetch the first
+					// definition of it
+					timeoutStr := entries[0]
+					timeout, err = strconv.ParseInt(timeoutStr, 10, 64)
+					if err != nil {
+						// Default back to a 1 hour Timeout if there is a parsing error
+						timeout = int64(3600)
+						log.Warning("Encountered error parsing Timeout %s on group %s", timeoutStr, dn)
+					}
+				}
+			}
+
+			log.Debug("Adding %s to %s with Timeout %d", ARNs, dn, timeout)
+			luc.groups[dn] = &Group{
+				ARNs:    ARNs,
+				Timeout: timeout,
+			}
 		}
 	}
 
@@ -134,7 +162,7 @@ func (luc *ldapUserCache) Update() error {
 		}
 
 		userDefaultRole := luc.defaultRole
-		arns := []string{}
+		groups := []*Group{}
 		if luc.enableLDAPRoles {
 			userDefaultRole = entry.GetAttributeValue(luc.defaultRoleAttr)
 			if userDefaultRole == "" {
@@ -142,14 +170,14 @@ func (luc *ldapUserCache) Update() error {
 			}
 			for _, groupDN := range entry.GetAttributeValues("memberOf") {
 				log.Debug(groupDN)
-				arns = append(arns, luc.groups[groupDN]...)
+				groups = append(groups, luc.groups[groupDN])
 			}
 		}
 
 		luc.users[username] = &User{
 			SSHKeys:     userKeys,
 			Username:    username,
-			ARNs:        arns,
+			Groups:      groups,
 			DefaultRole: userDefaultRole,
 		}
 
@@ -163,6 +191,10 @@ func (luc *ldapUserCache) Update() error {
 
 func (luc *ldapUserCache) Users() map[string]*User {
 	return luc.users
+}
+
+func (luc *ldapUserCache) Groups() map[string]*Group {
+	return luc.groups
 }
 
 func (luc *ldapUserCache) _verify(username string, challenge []byte, sshSig *ssh.Signature) (
@@ -201,10 +233,10 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 /*
 	NewLDAPUserCache returns a properly-configured LDAP cache.
 */
-func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string, groupClassAttr string, pubKeysAttr string) (*ldapUserCache, error) {
+func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string, groupClassAttr string, pubKeysAttr string, roleTimeoutAttr string) (*ldapUserCache, error) {
 	retCache := &ldapUserCache{
 		users:           map[string]*User{},
-		groups:          map[string][]string{},
+		groups:          map[string]*Group{},
 		server:          server,
 		stats:           stats,
 		userAttr:        userAttr,
@@ -215,6 +247,7 @@ func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr str
 		defaultRoleAttr: defaultRoleAttr,
 		groupClassAttr:  groupClassAttr,
 		pubKeysAttr:     pubKeysAttr,
+		roleTimeoutAttr: roleTimeoutAttr,
 	}
 
 	updateError := retCache.Update()
