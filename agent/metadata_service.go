@@ -73,7 +73,7 @@ func makeSecure(handler func(http.ResponseWriter, *http.Request), mds *metadataS
 		// Must make sure the remote ip is localhost, otherwise clients on the same network segment could
 		// potentially route traffic via 169.254.169.254:80
 		if ip != `127.0.0.1` && ip != `169.254.169.254` && !allowedIP {
-			msg := fmt.Sprintf("Access denied from non-localhost address: %s", ip)
+			msg := fmt.Sprintf("Access denied from non-localhost address: %s, allowed IPs: %v", ip, mds.IPAllowList)
 			http.Error(w, msg, http.StatusUnauthorized)
 			return
 		}
@@ -199,14 +199,14 @@ func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Reques
 NewMetadataService returns a properly-initialized metadataService for use.
 */
 func NewMetadataService(listener net.Listener, creds CredentialsSource, allowList *[]string) (MetadataService, error) {
-  IPAllowList := make([]string, 0)
-  if allowList != nil {
-      IPAllowList = *allowList
-  }
+	IPAllowList := make([]string, 0)
+	if allowList != nil {
+		IPAllowList = *allowList
+	}
 	return &metadataService{
 		listener:    listener,
 		creds:       creds,
-    IPAllowList: IPAllowList,
+		IPAllowList: IPAllowList,
 	}, nil
 }
 
