@@ -53,8 +53,9 @@ func TestMetadataService(t *testing.T) {
 			SessionToken:    &token,
 			Expiration:      &expiration,
 		}}
+    allowedIps := []string{"172.0.0.1"}
 
-		service, err := NewMetadataService(testListener, dummyCreds)
+		service, err := NewMetadataService(testListener, dummyCreds, &allowedIps)
 
 		So(err, ShouldBeNil)
 		So(service, ShouldNotBeNil)

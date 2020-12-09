@@ -80,7 +80,7 @@ func main() {
 
 	credsManager := agent.NewCredentialsExpirationManager()
 
-	mds, err := agent.NewMetadataService(listener, credsManager)
+	mds, err := agent.NewMetadataService(listener, credsManager, &config.IPAllowList)
 	if err != nil {
 		log.Errorf("Could not create metadata service: %s", err.Error())
 		os.Exit(1)

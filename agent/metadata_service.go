@@ -34,6 +34,7 @@ type MetadataService interface {
 	Port() int
 }
 
+// CredentialsSource all we need to get STS credentials
 type CredentialsSource interface {
 	GetCredentials() (*sts.Credentials, error)
 }
@@ -43,8 +44,9 @@ metadataService is the internal implementation of the public interface.
 It serves as a reference implementation of the EC2 HTTP API for workstations.
 */
 type metadataService struct {
-	listener net.Listener
-	creds    CredentialsSource
+	listener    net.Listener
+	creds       CredentialsSource
+	IPAllowList []string
 }
 
 func (mds *metadataService) Start() error {
@@ -60,9 +62,17 @@ func makeSecure(handler func(http.ResponseWriter, *http.Request), mds *metadataS
 			return
 		}
 
+		allowedIP := false
+		for _, allowed := range mds.IPAllowList {
+			if allowed == ip {
+				allowedIP = true
+				break
+			}
+		}
+
 		// Must make sure the remote ip is localhost, otherwise clients on the same network segment could
 		// potentially route traffic via 169.254.169.254:80
-		if ip != `127.0.0.1` && ip != `169.254.169.254` {
+		if ip != `127.0.0.1` && ip != `169.254.169.254` && !allowedIP {
 			msg := fmt.Sprintf("Access denied from non-localhost address: %s", ip)
 			http.Error(w, msg, http.StatusUnauthorized)
 			return
@@ -188,10 +198,15 @@ func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Reques
 /*
 NewMetadataService returns a properly-initialized metadataService for use.
 */
-func NewMetadataService(listener net.Listener, creds CredentialsSource) (MetadataService, error) {
+func NewMetadataService(listener net.Listener, creds CredentialsSource, allowList *[]string) (MetadataService, error) {
+  IPAllowList := make([]string, 0)
+  if allowList != nil {
+      IPAllowList = *allowList
+  }
 	return &metadataService{
-		listener: listener,
-		creds:    creds,
+		listener:    listener,
+		creds:       creds,
+    IPAllowList: IPAllowList,
 	}, nil
 }
 
