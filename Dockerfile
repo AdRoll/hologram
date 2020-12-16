@@ -1,16 +1,17 @@
-FROM golang:1.7.1
+FROM golang:1.10.1
 
 RUN apt-get update && apt-get install -y \
                                 cpio \
                                 file \
                                 gcc \
                                 g++ \
-                                libssl-dev \
+                                libssl1.0-dev \
                                 libxml2-dev \
                                 make \
                                 rpm \
                                 rsyslog \
                                 ruby \
+                                zlib1g-dev \
                                 ruby-dev
 
 RUN gem install fpm --no-rdoc --no-ri
