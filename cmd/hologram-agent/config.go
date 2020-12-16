@@ -20,5 +20,5 @@ Config represents the top-level configuration values required by the application
 type Config struct {
 	Host           string            `json:"host"`
 	AccountAliases map[string]string `json:"accountAliases"`
-	IPAllowList    []string          `json:"ipAllowList"`
+	AllowIps       []string          `json:"allowIps"`
 }

@@ -80,7 +80,13 @@ func main() {
 
 	credsManager := agent.NewCredentialsExpirationManager()
 
-	mds, err := agent.NewMetadataService(listener, credsManager, &config.IPAllowList)
+	allowIps := make(map[string]interface{})
+	log.Info("Non localhost allowed addresses: %v", config.AllowIps)
+	for _, ip := range config.AllowIps {
+		allowIps[ip] = true
+	}
+
+	mds, err := agent.NewMetadataService(listener, credsManager, &allowIps)
 	if err != nil {
 		log.Errorf("Could not create metadata service: %s", err.Error())
 		os.Exit(1)
