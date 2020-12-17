@@ -53,9 +53,10 @@ func TestMetadataService(t *testing.T) {
 			SessionToken:    &token,
 			Expiration:      &expiration,
 		}}
-		allowedIps := map[string]interface{}{"172.0.0.1": true}
+		_, ipNet, err := net.ParseCIDR("172.0.0.2/32")
+		allowedIps := []*net.IPNet{ipNet}
 
-		service, err := NewMetadataService(testListener, dummyCreds, &allowedIps)
+		service, err := NewMetadataService(testListener, dummyCreds, allowedIps)
 
 		So(err, ShouldBeNil)
 		So(service, ShouldNotBeNil)

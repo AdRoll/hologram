@@ -36,6 +36,21 @@ var (
 	config      Config
 )
 
+func ensureCIDR(s string) (*net.IPNet, error) {
+	_, ipNet, err := net.ParseCIDR(s)
+	if err == nil {
+		return ipNet, nil
+	}
+	log.Warning(err.Error())
+	// Maybe an ip so we'll add /32 to make it a single ip subnet
+	_, ipNet, err = net.ParseCIDR(s + "/32")
+	if err == nil {
+		return ipNet, nil
+	}
+	log.Warning(err.Error())
+	return nil, err
+}
+
 func main() {
 	flag.Parse()
 
@@ -51,6 +66,7 @@ func main() {
 		log.Errorf("Error reading from config file: %s", err.Error())
 		os.Exit(1)
 	}
+	log.Info("Config contents %v", configContents)
 
 	configParseErr := json.Unmarshal(configContents, &config)
 	if configParseErr != nil {
@@ -80,13 +96,18 @@ func main() {
 
 	credsManager := agent.NewCredentialsExpirationManager()
 
-	allowIps := make(map[string]interface{})
+	allowIps := []*net.IPNet{}
 	log.Info("Non localhost allowed addresses: %v", config.AllowIps)
 	for _, ip := range config.AllowIps {
-		allowIps[ip] = true
+		ipNet, err := ensureCIDR(ip)
+		if err == nil {
+			allowIps = append(allowIps, ipNet)
+		} else {
+			log.Warning("Ignoring invalid IP: %s", ip)
+		}
 	}
 
-	mds, err := agent.NewMetadataService(listener, credsManager, &allowIps)
+	mds, err := agent.NewMetadataService(listener, credsManager, allowIps)
 	if err != nil {
 		log.Errorf("Could not create metadata service: %s", err.Error())
 		os.Exit(1)

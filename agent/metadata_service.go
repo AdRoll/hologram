@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AdRoll/hologram/log"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -45,7 +46,7 @@ It serves as a reference implementation of the EC2 HTTP API for workstations.
 type metadataService struct {
 	listener net.Listener
 	creds    credentialsSource
-	allowIps map[string]interface{}
+	allowIps []*net.IPNet
 }
 
 func (mds *metadataService) Start() error {
@@ -61,13 +62,17 @@ func makeSecure(handler func(http.ResponseWriter, *http.Request), mds *metadataS
 			return
 		}
 
-		_, allowedIP := mds.allowIps[ip]
-		allowedIP = allowedIP || ip == `127.0.0.1` || ip == `169.254.169.254`
+		parsedIP := net.ParseIP(ip)
+		allowedIP := ip == `127.0.0.1` || ip == `169.254.169.254`
+		for _, ipNet := range mds.allowIps {
+			allowedIP = allowedIP || ipNet.Contains(parsedIP)
+		}
 
 		// Must make sure the remote ip is localhost, otherwise clients on the same network segment could
 		// potentially route traffic via 169.254.169.254:80
 		if !allowedIP {
 			msg := fmt.Sprintf("Access denied from non-localhost address: %s, non-localhost allowed addresses: %v", ip, mds.allowIps)
+			log.Info("Rejecting connection from ip %s", ip)
 			http.Error(w, msg, http.StatusUnauthorized)
 			return
 		}
@@ -192,10 +197,10 @@ func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Reques
 /*
 NewMetadataService returns a properly-initialized metadataService for use.
 */
-func NewMetadataService(listener net.Listener, creds credentialsSource, allowList *map[string]interface{}) (MetadataService, error) {
-	allowIps := make(map[string]interface{})
+func NewMetadataService(listener net.Listener, creds credentialsSource, allowList []*net.IPNet) (MetadataService, error) {
+	allowIps := []*net.IPNet{}
 	if allowList != nil {
-		allowIps = *allowList
+		allowIps = allowList
 	}
 	return &metadataService{
 		listener: listener,
