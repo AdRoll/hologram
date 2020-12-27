@@ -62,8 +62,8 @@ func makeSecure(handler func(http.ResponseWriter, *http.Request), mds *metadataS
 			return
 		}
 
+		allowedIP := false
 		parsedIP := net.ParseIP(ip)
-		allowedIP := ip == `127.0.0.1` || ip == `169.254.169.254`
 		for _, ipNet := range mds.allowIps {
 			allowedIP = allowedIP || ipNet.Contains(parsedIP)
 		}
@@ -71,7 +71,7 @@ func makeSecure(handler func(http.ResponseWriter, *http.Request), mds *metadataS
 		// Must make sure the remote ip is localhost, otherwise clients on the same network segment could
 		// potentially route traffic via 169.254.169.254:80
 		if !allowedIP {
-			msg := fmt.Sprintf("Access denied from non-localhost address: %s, non-localhost allowed addresses: %v", ip, mds.allowIps)
+			msg := fmt.Sprintf("Access denied from non-localhost address: %s, not in the set of allowed IPs", ip)
 			log.Info("Rejecting connection from ip %s", ip)
 			http.Error(w, msg, http.StatusUnauthorized)
 			return
@@ -197,11 +197,19 @@ func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Reques
 /*
 NewMetadataService returns a properly-initialized metadataService for use.
 */
-func NewMetadataService(listener net.Listener, creds credentialsSource, allowList []*net.IPNet) (MetadataService, error) {
+func NewMetadataService(listener net.Listener, creds credentialsSource, extraAllowedIps []*net.IPNet) (MetadataService, error) {
+
 	allowIps := []*net.IPNet{}
-	if allowList != nil {
-		allowIps = allowList
+	if extraAllowedIps != nil {
+		allowIps = extraAllowedIps
 	}
+
+	// Add default allowed nets to the list
+	for _, cidr := range []string{"127.0.0.1/32", "169.254.169.254/32"} {
+		_, ipNet, _ := net.ParseCIDR(cidr)
+		allowIps = append(allowIps, ipNet)
+	}
+
 	return &metadataService{
 		listener: listener,
 		creds:    creds,

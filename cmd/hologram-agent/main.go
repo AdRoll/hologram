@@ -96,18 +96,18 @@ func main() {
 
 	credsManager := agent.NewCredentialsExpirationManager()
 
-	allowIps := []*net.IPNet{}
-	log.Info("Non localhost allowed addresses: %v", config.AllowIps)
-	for _, ip := range config.AllowIps {
+	extraIps := []*net.IPNet{}
+	log.Info("Non localhost allowed addresses: %v", config.ExtraAllowedIps)
+	for _, ip := range config.ExtraAllowedIps {
 		ipNet, err := ensureCIDR(ip)
 		if err == nil {
-			allowIps = append(allowIps, ipNet)
+			extraIps = append(extraIps, ipNet)
 		} else {
 			log.Warning("Ignoring invalid IP: %s", ip)
 		}
 	}
 
-	mds, err := agent.NewMetadataService(listener, credsManager, allowIps)
+	mds, err := agent.NewMetadataService(listener, credsManager, extraIps)
 	if err != nil {
 		log.Errorf("Could not create metadata service: %s", err.Error())
 		os.Exit(1)
