@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/AdRoll/hologram/log"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -34,7 +35,7 @@ type MetadataService interface {
 	Port() int
 }
 
-type CredentialsSource interface {
+type credentialsSource interface {
 	GetCredentials() (*sts.Credentials, error)
 }
 
@@ -44,7 +45,8 @@ It serves as a reference implementation of the EC2 HTTP API for workstations.
 */
 type metadataService struct {
 	listener net.Listener
-	creds    CredentialsSource
+	creds    credentialsSource
+	allowIps []*net.IPNet
 }
 
 func (mds *metadataService) Start() error {
@@ -60,10 +62,17 @@ func makeSecure(handler func(http.ResponseWriter, *http.Request), mds *metadataS
 			return
 		}
 
+		allowedIP := false
+		parsedIP := net.ParseIP(ip)
+		for _, ipNet := range mds.allowIps {
+			allowedIP = allowedIP || ipNet.Contains(parsedIP)
+		}
+
 		// Must make sure the remote ip is localhost, otherwise clients on the same network segment could
 		// potentially route traffic via 169.254.169.254:80
-		if ip != `127.0.0.1` && ip != `169.254.169.254` {
-			msg := fmt.Sprintf("Access denied from non-localhost address: %s", ip)
+		if !allowedIP {
+			msg := fmt.Sprintf("Access denied from %s, not in the set of allowed IPs", ip)
+			log.Info("Rejecting connection from ip %s", ip)
 			http.Error(w, msg, http.StatusUnauthorized)
 			return
 		}
@@ -188,10 +197,23 @@ func (mds *metadataService) getCredentials(w http.ResponseWriter, r *http.Reques
 /*
 NewMetadataService returns a properly-initialized metadataService for use.
 */
-func NewMetadataService(listener net.Listener, creds CredentialsSource) (MetadataService, error) {
+func NewMetadataService(listener net.Listener, creds credentialsSource, extraAllowedIps []*net.IPNet) (MetadataService, error) {
+
+	allowIps := []*net.IPNet{}
+	if extraAllowedIps != nil {
+		allowIps = extraAllowedIps
+	}
+
+	// Add default allowed nets to the list
+	for _, ip := range []net.IP{net.IPv4(127, 0, 0, 1), net.IPv4(169, 254, 169, 254)} {
+		ipNet := &net.IPNet{IP: ip, Mask: net.CIDRMask(32, 32)}
+		allowIps = append(allowIps, ipNet)
+	}
+
 	return &metadataService{
 		listener: listener,
 		creds:    creds,
+		allowIps: allowIps,
 	}, nil
 }
 

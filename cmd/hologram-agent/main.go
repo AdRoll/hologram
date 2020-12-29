@@ -18,6 +18,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -35,6 +36,19 @@ var (
 	httpPort    = flag.Int("port", 80, "Port for metadata service to listen on")
 	config      Config
 )
+
+func ensureCIDR(s string) (*net.IPNet, error) {
+	_, ipNet, err := net.ParseCIDR(s)
+	if err == nil {
+		return ipNet, nil
+	}
+	// Maybe an ip so we'll add /32 to make it a single ip subnet
+	_, ipNet, err = net.ParseCIDR(s + "/32")
+	if err == nil {
+		return ipNet, nil
+	}
+	return nil, fmt.Errorf("%s is not a valid IP or subnet", s)
+}
 
 func main() {
 	flag.Parse()
@@ -80,7 +94,18 @@ func main() {
 
 	credsManager := agent.NewCredentialsExpirationManager()
 
-	mds, err := agent.NewMetadataService(listener, credsManager)
+	extraIps := []*net.IPNet{}
+	log.Info("Extra allowed addresses: %v", config.ExtraAllowedIps)
+	for _, ip := range config.ExtraAllowedIps {
+		ipNet, err := ensureCIDR(ip)
+		if err != nil {
+			log.Errorf("Could not parse allowed IPs in config: %s", err)
+			os.Exit(1)
+		}
+		extraIps = append(extraIps, ipNet)
+	}
+
+	mds, err := agent.NewMetadataService(listener, credsManager, extraIps)
 	if err != nil {
 		log.Errorf("Could not create metadata service: %s", err.Error())
 		os.Exit(1)

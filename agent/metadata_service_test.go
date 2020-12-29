@@ -18,8 +18,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
@@ -34,6 +37,16 @@ type dummyCredentialsSource struct {
 
 func (d *dummyCredentialsSource) GetCredentials() (*sts.Credentials, error) {
 	return d.creds, d.err
+}
+
+func request(port int, path string) []byte {
+	url := fmt.Sprintf("http://localhost:%v%v", port, path)
+	response, err := http.Get(url)
+	So(err, ShouldBeNil)
+	So(response.StatusCode, ShouldEqual, 200)
+	respBodyBytes := make([]byte, response.ContentLength)
+	response.Body.Read(respBodyBytes)
+	return respBodyBytes
 }
 
 func TestMetadataService(t *testing.T) {
@@ -53,8 +66,9 @@ func TestMetadataService(t *testing.T) {
 			SessionToken:    &token,
 			Expiration:      &expiration,
 		}}
+		allowedIps := []*net.IPNet{}
 
-		service, err := NewMetadataService(testListener, dummyCreds)
+		service, err := NewMetadataService(testListener, dummyCreds, allowedIps)
 
 		So(err, ShouldBeNil)
 		So(service, ShouldNotBeNil)
@@ -126,12 +140,71 @@ func TestMetadataService(t *testing.T) {
 	})
 }
 
-func request(port int, path string) []byte {
-	url := fmt.Sprintf("http://localhost:%v%v", port, path)
-	response, err := http.Get(url)
-	So(err, ShouldBeNil)
-	So(response.StatusCode, ShouldEqual, 200)
-	respBodyBytes := make([]byte, response.ContentLength)
-	response.Body.Read(respBodyBytes)
-	return respBodyBytes
+func TestMakeSecureAllowedIPs(t *testing.T) {
+	Convey("Given a test handler with allowed IP", t, func() {
+		allowedIP := net.IPv4(172, 17, 0, 1)
+		notAllowed := net.IPv4(172, 17, 0, 2)
+		testListener, err := net.ListenTCP("tcp", &net.TCPAddr{
+			IP:   net.ParseIP("0.0.0.0"),
+			Port: 0,
+		})
+		accessKey := "access_key"
+		secretKey := "secret"
+		token := "token"
+		expiration := time.Date(2014, 10, 22, 12, 21, 17, 00, time.UTC)
+		dummyCreds := &dummyCredentialsSource{creds: &sts.Credentials{
+			AccessKeyId:     &accessKey,
+			SecretAccessKey: &secretKey,
+			SessionToken:    &token,
+			Expiration:      &expiration,
+		}}
+
+		allowedIps := []*net.IPNet{&net.IPNet{
+			IP:   allowedIP,
+			Mask: net.CIDRMask(32, 32),
+		}}
+
+		mds := &metadataService{
+			listener: testListener,
+			creds:    dummyCreds,
+			allowIps: allowedIps,
+		}
+
+		insecureHandler := func(w http.ResponseWriter, r *http.Request) {
+			io.WriteString(w, "Coveted secret")
+		}
+
+		handler := makeSecure(insecureHandler, mds)
+
+		So(err, ShouldBeNil)
+		So(mds, ShouldNotBeNil)
+
+		url := fmt.Sprintf("http://localhost:%v%v", mds.Port(), "/latest/meta-data/iam/security-credentials/hologram-access")
+
+		Convey("It should respond correctly to allowed IPs", func() {
+			req := httptest.NewRequest("GET", url, nil)
+			req.RemoteAddr = fmt.Sprintf("%s:80", allowedIP)
+			w := httptest.NewRecorder()
+			handler(w, req)
+
+			resp := w.Result()
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			So(resp.StatusCode, ShouldEqual, 200)
+			So(string(body), ShouldEqual, "Coveted secret")
+		})
+
+		Convey("It should block other IPs", func() {
+			req := httptest.NewRequest("GET", url, nil)
+			req.RemoteAddr = fmt.Sprintf("%s:80", notAllowed)
+			w := httptest.NewRecorder()
+			handler(w, req)
+
+			resp := w.Result()
+			body, _ := ioutil.ReadAll(resp.Body)
+
+			So(resp.StatusCode, ShouldEqual, 401)
+			So(string(body), ShouldNotEqual, "Coveted secret")
+		})
+	})
 }
