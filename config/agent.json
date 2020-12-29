@@ -1,4 +1,4 @@
 {
   "host": "",
-  "allowIps": []
+  "extraAllowedIps": []
 }
