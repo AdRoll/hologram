@@ -97,7 +97,7 @@ func main() {
 	credsManager := agent.NewCredentialsExpirationManager()
 
 	extraIps := []*net.IPNet{}
-	log.Info("Non localhost allowed addresses: %v", config.ExtraAllowedIps)
+	log.Info("Extra allowed addresses: %v", config.ExtraAllowedIps)
 	for _, ip := range config.ExtraAllowedIps {
 		ipNet, err := ensureCIDR(ip)
 		if err == nil {
