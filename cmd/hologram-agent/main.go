@@ -18,6 +18,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"os"
@@ -41,14 +42,12 @@ func ensureCIDR(s string) (*net.IPNet, error) {
 	if err == nil {
 		return ipNet, nil
 	}
-	log.Warning(err.Error())
 	// Maybe an ip so we'll add /32 to make it a single ip subnet
 	_, ipNet, err = net.ParseCIDR(s + "/32")
 	if err == nil {
 		return ipNet, nil
 	}
-	log.Warning(err.Error())
-	return nil, err
+	return nil, fmt.Errorf("%s is not a valid IP or subnet", s)
 }
 
 func main() {
@@ -66,7 +65,6 @@ func main() {
 		log.Errorf("Error reading from config file: %s", err.Error())
 		os.Exit(1)
 	}
-	log.Info("Config contents %v", configContents)
 
 	configParseErr := json.Unmarshal(configContents, &config)
 	if configParseErr != nil {
@@ -100,11 +98,11 @@ func main() {
 	log.Info("Extra allowed addresses: %v", config.ExtraAllowedIps)
 	for _, ip := range config.ExtraAllowedIps {
 		ipNet, err := ensureCIDR(ip)
-		if err == nil {
-			extraIps = append(extraIps, ipNet)
-		} else {
-			log.Warning("Ignoring invalid IP: %s", ip)
+		if err != nil {
+			log.Errorf("Could not parse allowed IPs in config: %s", err)
+			os.Exit(1)
 		}
+		extraIps = append(extraIps, ipNet)
 	}
 
 	mds, err := agent.NewMetadataService(listener, credsManager, extraIps)
