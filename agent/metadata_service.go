@@ -205,8 +205,8 @@ func NewMetadataService(listener net.Listener, creds credentialsSource, extraAll
 	}
 
 	// Add default allowed nets to the list
-	for _, cidr := range []string{"127.0.0.1/32", "169.254.169.254/32"} {
-		_, ipNet, _ := net.ParseCIDR(cidr)
+	for _, ip := range []net.IP{net.IPv4(127, 0, 0, 1), net.IPv4(169, 254, 169, 254)} {
+		ipNet := &net.IPNet{IP: ip, Mask: net.CIDRMask(32, 32)}
 		allowIps = append(allowIps, ipNet)
 	}
 
