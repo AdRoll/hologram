@@ -1,0 +1,9 @@
+{
+    "version": "2.0.0",
+    "tasks": [{
+        "label": "rm_sock",
+        "command": "rm", // Could be any other shell command
+        "args": ["/var/run/hologram.sock"],
+        "type": "shell"
+    }]
+}
