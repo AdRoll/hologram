@@ -16,7 +16,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -25,38 +24,42 @@ import (
 	"github.com/AdRoll/hologram/protocol"
 	"github.com/AdRoll/hologram/transport/local"
 	"github.com/mitchellh/go-homedir"
+	"github.com/spf13/cobra"
 )
 
+var currentVersion = "UNKNOWN" // overwritten during build with GIT_TAG
+
 func main() {
-	flag.Parse()
-
-	args := flag.Args()
-
-	var err error
-
-	if len(args) < 1 {
-		fmt.Println("Usage: hologram <cmd>")
-		os.Exit(1)
+	var rootCmd = &cobra.Command{
+		Use:   "hologram [command]",
+		Short: "Easy, painless AWS credentials on developer laptops",
+		Long: `Easy, painless AWS credentials on developer laptops
+The hologram CLI is a tool from the https://github.com/AdRoll/hologram application`,
+		Version: currentVersion,
+	}
+	var useCmd = &cobra.Command{
+		Use:   "use <role>",
+		Short: "Use a specific role",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return use(args[0])
+		},
+	}
+	var meCmd = &cobra.Command{
+		Use:   "me",
+		Short: "Use your default role",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return me()
+		},
 	}
 
-	switch args[0] {
-	case "use":
-		if len(args) < 2 {
-			fmt.Println("Usage: hologram use <role>")
-			os.Exit(1)
-		}
-		err = use(args[1])
-		break
-	case "me":
-		err = me()
-		break
-	default:
-		fmt.Println("Usage: hologram use <role>")
-		os.Exit(1)
-	}
+	rootCmd.AddCommand(
+		useCmd,
+		meCmd,
+	)
 
-	if err != nil {
-		log.Errorf(err.Error())
+	if rootCmd.Execute() != nil {
 		os.Exit(1)
 	}
 }
