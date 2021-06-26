@@ -32,7 +32,7 @@ case $1 in
 
     status)
         printf '%-50s' "Checking $NAME..."
-        if [ -f $PIDFILE ]; then
+        if [[ -f $PIDFILE ]]; then
             pid=$(cat "$PIDFILE")
             if [ -z "$(ps axf | grep "$pid" | grep -v grep)" ]; then
                 echo Process dead but pidfile exists
