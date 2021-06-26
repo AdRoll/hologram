@@ -21,12 +21,12 @@ start)
   ip addr add 169.254.169.254/24 broadcast 169.254.169.255 dev lo:metadata
   ip link set dev lo:metadata up
   PID=$("$DAEMON" $DAEMONOPTS &> /var/log/hologram.log & echo $!)
-        if [ -z $PID ]; then
-            printf '%s\n' Fail
-        else
-            echo $PID > $PIDFILE
-            printf '%s\n' Ok
-        fi
+  if [ -z $PID ]; then
+      printf '%s\n' Fail
+  else
+      echo $PID > $PIDFILE
+      printf '%s\n' Ok
+  fi
 ;;
 status)
         printf '%-50s' "Checking $NAME..."
