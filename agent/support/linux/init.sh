@@ -5,11 +5,10 @@
 # processname: hologram-agent
 
 DAEMON_PATH=/usr/local/bin
-
-DAEMON=/usr/local/bin/hologram-agent
+NAME=hologram-agent
+DAEMON=$DAEMON_PATH/$NAME
 DAEMONOPTS=
 
-NAME=hologram-agent
 DESC="AWS Credentials Agent"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
