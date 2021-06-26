@@ -23,7 +23,7 @@ case $1 in
         ip link set dev lo:metadata up
         pid=$("$DAEMON" $DAEMONOPTS &> /var/log/hologram.log & echo $!)
         if [[ $pid ]]; then
-            echo $pid > $PIDFILE
+            echo "$pid" > "$PIDFILE"
             printf '%s\n' Ok
         else
             printf '%s\n' Fail
@@ -33,8 +33,8 @@ case $1 in
     status)
         printf '%-50s' "Checking $NAME..."
         if [ -f $PIDFILE ]; then
-            pid=$(cat $PIDFILE)
-            if [ -z "$(ps axf | grep ${pid} | grep -v grep)" ]; then
+            pid=$(cat "$PIDFILE")
+            if [ -z "$(ps axf | grep "$pid" | grep -v grep)" ]; then
                 printf '%s\n' "Process dead but pidfile exists"
             else
                 echo Running
@@ -46,12 +46,12 @@ case $1 in
 
     stop)
         printf '%-50s' "Stopping $NAME"
-        pid=$(cat $PIDFILE)
+        pid=$(cat "$PIDFILE")
         cd $DAEMON_PATH
         if [ -f $PIDFILE ]; then
-            kill -TERM $pid
+            kill -TERM "$pid"
             printf '%s\n' Ok
-            rm -f $PIDFILE
+            rm -f "$PIDFILE"
         else
             printf '%s\n' 'pidfile not found'
         fi
