@@ -65,4 +65,3 @@ restart)
         echo "Usage: $0 {status|start|stop|restart}"
         exit 1
 esac
-
