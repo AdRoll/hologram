@@ -16,7 +16,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 case $1 in
 start)
   printf '%-50s' "Starting $NAME..."
-  cd $DAEMON_PATH
+  cd "$DAEMON_PATH"
   # Make sure that the metadata interface is up.
   ip addr add 169.254.169.254/24 broadcast 169.254.169.255 dev lo:metadata
   ip link set dev lo:metadata up
