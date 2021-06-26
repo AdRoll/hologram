@@ -33,7 +33,7 @@ case $1 in
     status)
         printf '%-50s' "Checking $NAME..."
         if [[ -f $PIDFILE ]]; then
-            pid=$(cat "$PIDFILE")
+            pid=$(< "$PIDFILE")
             if [ -z "$(ps axf | grep "$pid" | grep -v grep)" ]; then
                 echo Process dead but pidfile exists
             else
@@ -46,7 +46,7 @@ case $1 in
 
     stop)
         printf '%-50s' "Stopping $NAME"
-        pid=$(cat "$PIDFILE")
+        pid=$(< "$PIDFILE")
         cd $DAEMON_PATH
         if [ -f $PIDFILE ]; then
             kill -TERM "$pid"
