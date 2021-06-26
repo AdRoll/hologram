@@ -20,19 +20,19 @@ start)
   # Make sure that the metadata interface is up.
   ip addr add 169.254.169.254/24 broadcast 169.254.169.255 dev lo:metadata
   ip link set dev lo:metadata up
-  PID=$("$DAEMON" $DAEMONOPTS &> /var/log/hologram.log & echo $!)
-  if [ -z $PID ]; then
+  pid=$("$DAEMON" $DAEMONOPTS &> /var/log/hologram.log & echo $!)
+  if [ -z $pid ]; then
       printf '%s\n' Fail
   else
-      echo $PID > $PIDFILE
+      echo $pid > $PIDFILE
       printf '%s\n' Ok
   fi
 ;;
 status)
         printf '%-50s' "Checking $NAME..."
         if [ -f $PIDFILE ]; then
-            PID=$(cat $PIDFILE)
-            if [ -z "$(ps axf | grep ${PID} | grep -v grep)" ]; then
+            pid=$(cat $PIDFILE)
+            if [ -z "$(ps axf | grep ${pid} | grep -v grep)" ]; then
                 printf '%s\n' "Process dead but pidfile exists"
             else
                 echo Running
@@ -43,10 +43,10 @@ status)
 ;;
 stop)
         printf '%-50s' "Stopping $NAME"
-            PID=$(cat $PIDFILE)
+            pid=$(cat $PIDFILE)
             cd $DAEMON_PATH
         if [ -f $PIDFILE ]; then
-            kill -TERM $PID
+            kill -TERM $pid
             printf '%s\n' Ok
             rm -f $PIDFILE
         else
