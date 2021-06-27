@@ -49,10 +49,10 @@ case $1 in
         cd $DAEMON_PATH
         if [ -f $PIDFILE ]; then
             kill -TERM "$pid"
-            printf '%s\n' Ok
+            echo Ok
             rm -f "$PIDFILE"
         else
-            printf '%s\n' 'pidfile not found'
+            echo pidfile not found
         fi
     ;;
 
