@@ -24,9 +24,9 @@ case $1 in
         pid=$("$DAEMON" $DAEMONOPTS &> /var/log/hologram.log & echo $!)
         if [[ $pid ]]; then
             echo "$pid" > "$PIDFILE"
-            printf '%s\n' Ok
+            echo Ok
         else
-            printf '%s\n' Fail
+            echo Fail
         fi
     ;;
 
@@ -35,12 +35,12 @@ case $1 in
         if [ -f $PIDFILE ]; then
             pid=$(cat "$PIDFILE")
             if [ -z "$(ps axf | grep "$pid" | grep -v grep)" ]; then
-                printf '%s\n' "Process dead but pidfile exists"
+                echo Process dead but pidfile exists
             else
                 echo Running
             fi
         else
-            printf '%s\n' 'Service not running'
+            echo Service not running
         fi
     ;;
 
