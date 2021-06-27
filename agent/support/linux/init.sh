@@ -46,7 +46,7 @@ case $1 in
     stop)
         printf '%-50s' "Stopping $NAME"
         pid=$(< "$PIDFILE")
-        cd $DAEMON_PATH
+        cd "$DAEMON_PATH"
         if [ -f $PIDFILE ]; then
             kill -TERM "$pid"
             echo Ok
