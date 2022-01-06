@@ -9,3 +9,4 @@ artifacts/
 deploy/healthcheck
 .hologram-package-config
 .idea/
+.DS_Store
