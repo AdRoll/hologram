@@ -1,4 +1,6 @@
-FROM golang:1.10.1
+FROM golang:1.17.5
+
+RUN echo 'deb http://deb.debian.org/debian stretch main' >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y \
                                 cpio \
@@ -14,7 +16,7 @@ RUN apt-get update && apt-get install -y \
                                 zlib1g-dev \
                                 ruby-dev
 
-RUN gem install fpm --no-rdoc --no-ri
+RUN gem install fpm
 
 RUN cd /tmp && wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz && tar -zxvf protobuf-2.6.1.tar.gz > /dev/null && cd protobuf-2.6.1 && ./configure --prefix=/usr > /dev/null && make > /dev/null && make install > /dev/null && rm -rf /tmp/protobuf-2.6.1 protobuf-2.6.1.tar.gz
 
