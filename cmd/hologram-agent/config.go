@@ -18,6 +18,7 @@ package main
 Config represents the top-level configuration values required by the application.
 */
 type Config struct {
-	Host           string            `json:"host"`
-	AccountAliases map[string]string `json:"accountAliases"`
+	Host            string            `json:"host"`
+	AccountAliases  map[string]string `json:"accountAliases"`
+	ExtraAllowedIps []string          `json:"extraAllowedIps"`
 }

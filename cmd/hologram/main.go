@@ -27,6 +27,9 @@ import (
 	"github.com/mitchellh/go-homedir"
 )
 
+// Version will be linked at compile time
+var Version = "Unknown - Not built using standard process"
+
 func main() {
 	flag.Parse()
 
@@ -49,6 +52,9 @@ func main() {
 		break
 	case "me":
 		err = me()
+		break
+	case "version":
+		fmt.Println(Version)
 		break
 	default:
 		fmt.Println("Usage: hologram use <role>")
