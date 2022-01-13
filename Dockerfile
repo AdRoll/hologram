@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y \
                                 rsyslog \
                                 ruby \
                                 zlib1g-dev \
-                                ruby-dev
+                                ruby-dev \
+                                jq
 
 RUN gem install fpm
 

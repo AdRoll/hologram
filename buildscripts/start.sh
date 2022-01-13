@@ -4,6 +4,8 @@ source ${HOLOGRAM_DIR}/buildscripts/returncodes.sh
 
 rsyslogd  # Believe it or not you need syslog to test hologram
 
+export HOLOGRAM_HOST="$2"
+
 if [ "$1" == "build_linux" ]; then
     compile_hologram.sh --deps || exit $?
     build_linux_pkgs.sh || exit $?

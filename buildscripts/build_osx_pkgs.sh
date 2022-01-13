@@ -23,6 +23,12 @@ install -m 0644 ${HOLOGRAM_DIR}/agent/support/darwin/com.adroll.hologram-me.plis
 install -m 0755 ${HOLOGRAM_DIR}/agent/support/darwin/postinstall.sh /hologram-build/darwin/scripts/postinstall
 install -m 0755 ${HOLOGRAM_DIR}/agent/support/darwin/preinstall.sh /hologram-build/darwin/scripts/preinstall
 
+# Special handling for custom host override
+if [[ -n "$HOLOGRAM_HOST" ]]
+then
+  cat "${HOLOGRAM_DIR}/config/agent.json" | jq ". + {\"host\": \"$HOLOGRAM_HOST\"}" > /hologram-build/darwin/root/etc/hologram/agent.json
+fi
+
 NUM_FILES=$(find /hologram-build/darwin/root | wc -l)
 INSTALL_KB_SIZE=$(du -k -s /hologram-build/darwin/root | awk '{print $1}')
 
