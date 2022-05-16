@@ -104,7 +104,9 @@ Spawned in the background.
 func (mds *metadataService) listen() {
 	handler := http.NewServeMux()
 	handler.HandleFunc("/latest", makeSecure(mds.getServices, mds))
+	handler.HandleFunc("/latest/api/token", makeSecure(mds.getv2Token, mds))
 	handler.HandleFunc("/latest/meta-data/iam/security-credentials/", makeSecure(mds.enumerateRoles, mds))
+	handler.HandleFunc("/latest/meta-data/iam/security-credentials", makeSecure(mds.enumerateRoles, mds))
 	handler.HandleFunc("/latest/meta-data/iam/security-credentials/hologram-access", makeSecure(mds.getCredentials, mds))
 	handler.HandleFunc("/latest/meta-data/instance-id", makeSecure(mds.getInstanceID, mds))
 	handler.HandleFunc("/latest/meta-data/placement/availability-zone", makeSecure(mds.getAvailabilityZone, mds))
@@ -153,6 +155,11 @@ production environment.
 func (mds *metadataService) getServices(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Server", "EC2ws")
 	fmt.Fprint(w, "meta-data")
+}
+
+func (mds *metadataService) getv2Token(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("x-aws-ec2-metadata-token-ttl-seconds", r.Header.Get("x-aws-ec2-metadata-token-ttl-seconds"))
+	fmt.Fprint(w, "AQAAAO8q4JDjNt4Nk1u6A9zFMofraQ1ZWRUQ8ppb9sWxiXEbYOSlOw==")
 }
 
 func (mds *metadataService) getInstanceID(w http.ResponseWriter, r *http.Request) {
