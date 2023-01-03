@@ -16,10 +16,16 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
+	"os/exec"
+	"runtime"
 
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
@@ -53,9 +59,19 @@ func main() {
 	case "me":
 		err = me()
 		break
+	case "console":
+		err = launchConsole()
 	case "version":
 		fmt.Println(Version)
 		break
+	case "help":
+		fmt.Println("Usage: hologram <cmd>")
+		fmt.Println("Commands:")
+		fmt.Println("  use <role> - Assume a role")
+		fmt.Println("  me - Get credentials for the current user")
+		fmt.Println("  console - Log into the AWS console via the default browser")
+		fmt.Println("  version - Print version")
+		fmt.Println("  help - Print this help message")
 	default:
 		fmt.Println("Usage: hologram use <role>")
 		os.Exit(1)
@@ -155,4 +171,99 @@ func request(req *protocol.AgentRequest) (*protocol.AgentResponse, error) {
 	}
 
 	return response.GetAgentResponse(), nil
+}
+
+type HttpHologramCredentials struct {
+	Code string
+	LastUpdated string
+	Type string
+	AccessKeyId string
+	SecretAccessKey string
+	Token string
+	Expiration string
+}
+
+type HttpAwsCredentials struct {
+	SessionId string `json:"sessionId"`
+	SessionKey string `json:"sessionKey"`
+	SessionToken string `json:"sessionToken"`
+}
+
+type HttpFederationSigninToken struct {
+	SigninToken string
+}
+
+func launchConsole() error {
+	federationUrlBase := "https://signin.aws.amazon.com/federation"
+	profileUrl := "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
+	awsConsoleUrl := "https://console.aws.amazon.com/"
+
+	// Get the profile name from the metadata service
+	response, err := http.Get(profileUrl)
+	defer response.Body.Close()
+	if err != nil {
+		return err
+	}
+	profileBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	profile := string(profileBytes)
+
+	// Get the credentials from the metadata service
+	metadataUrl := fmt.Sprintf("%v%v", profileUrl, profile)
+	response, err = http.Get(metadataUrl)
+	defer response.Body.Close()
+	if err != nil {
+		return err
+	}
+	if response.StatusCode != 200 {
+		return fmt.Errorf("error getting credentials. Try running 'hologram me'")
+	}
+	metadataBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	credentials := HttpHologramCredentials{}
+	err = json.Unmarshal(metadataBytes, &credentials)
+	if err != nil {
+		// TODO add SyntaxError handling for when hologram me hasn't run yet
+		return err
+	}
+
+	// Get the federation signin token
+	awsCreds := HttpAwsCredentials{
+		SessionId: credentials.AccessKeyId,
+		SessionKey: credentials.SecretAccessKey,
+		SessionToken: credentials.Token,
+	}
+	awsCredsJson, err := json.Marshal(awsCreds)
+	signinTokenUrl := fmt.Sprintf("%v?Action=getSigninToken&SessionDuration=43200&Session=%v", federationUrlBase, url.QueryEscape(string(awsCredsJson)))
+	response, err = http.Get(signinTokenUrl)
+	defer response.Body.Close()
+	if err != nil {
+		return err
+	}
+	signinToken_bytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	signinToken := HttpFederationSigninToken{}
+	err = json.Unmarshal(signinToken_bytes, &signinToken)
+	if err != nil {
+		return err
+	}
+
+	// Get the federation login URL
+	federationUrl := fmt.Sprintf("%v?Action=login&Issuer=Hologram&Destination=%v&SigninToken=%v", federationUrlBase, url.QueryEscape(awsConsoleUrl), signinToken.SigninToken)
+
+	// Open the URL in the browser
+	switch runtime.GOOS {
+		case "darwin":
+			err = exec.Command("open", federationUrl).Start()
+	default:
+		return fmt.Errorf("unsupported OS: %v", runtime.GOOS)
+	}
+
+	return err
 }
