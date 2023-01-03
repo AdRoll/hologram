@@ -1,4 +1,4 @@
-FROM golang:1.17.5
+FROM golang:1.19.4
 
 RUN echo 'deb http://deb.debian.org/debian stretch main' >> /etc/apt/sources.list
 
@@ -26,7 +26,7 @@ RUN cd /tmp && wget https://github.com/google/protobuf/releases/download/v2.6.1/
 
 WORKDIR /tmp
 # Get dependencies for building hologram
-RUN go get github.com/jteeuwen/go-bindata/...
+RUN go install github.com/jteeuwen/go-bindata/...
 RUN git clone https://github.com/pote/gpm.git && cd gpm && ./configure && make install && rm -rf /tmp/gpm
 RUN wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/xar/xar-1.5.2.tar.gz && tar xf xar-1.5.2.tar.gz && cd xar-1.5.2 && ./configure && make && make install && rm -rf /tmp/xar-1.5.2
 RUN git clone https://github.com/hogliux/bomutils.git > /dev/null && cd bomutils && make > /dev/null && make install  > /dev/null && rm -rf /tmp/bomutils
