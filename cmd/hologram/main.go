@@ -26,6 +26,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"time"
 
 	"github.com/AdRoll/hologram/log"
 	"github.com/AdRoll/hologram/protocol"
@@ -198,6 +199,16 @@ func launchConsole() error {
 	profileUrl := "http://169.254.169.254/latest/meta-data/iam/security-credentials/"
 	awsConsoleUrl := "https://console.aws.amazon.com/"
 
+	// Parse optional flags
+	cmd := flag.NewFlagSet("console", flag.ExitOnError)
+	newSession := cmd.Bool("new-session", false, "Start a new Google Chrome session. This allows use of multiple roles simultaneously.")
+	showUrl := cmd.Bool("show-url", false, "Show the federation URL used for sign-in.")
+	noLaunch := cmd.Bool("no-launch", false, "Don't launch the browser.")
+	err := cmd.Parse(os.Args[2:])
+	if err != nil {
+		return err
+	}
+
 	// Get the profile name from the metadata service
 	response, err := http.Get(profileUrl)
 	defer response.Body.Close()
@@ -257,10 +268,34 @@ func launchConsole() error {
 	// Get the federation login URL
 	federationUrl := fmt.Sprintf("%v?Action=login&Issuer=Hologram&Destination=%v&SigninToken=%v", federationUrlBase, url.QueryEscape(awsConsoleUrl), signinToken.SigninToken)
 
+	// if --show-url is set, print the URL
+	if *showUrl {
+		fmt.Println(federationUrl)
+	}
+	// if --no-launch is set, stop here
+	if *noLaunch {
+		return nil
+	}
+
 	// Open the URL in the browser
+	var openArgs []string
 	switch runtime.GOOS {
 		case "darwin":
-			err = exec.Command("open", federationUrl).Start()
+			if *newSession {
+				dateSeconds := time.Now().Unix()
+				userDataDir := fmt.Sprintf("/tmp/hologram_session_%v/", dateSeconds)
+				err := os.MkdirAll(userDataDir, 0755)
+				if err != nil {
+					return err
+				}
+				_, err = os.Create(fmt.Sprintf("%v/First Run", userDataDir))
+				if err != nil {
+					return err
+				}
+				openArgs = append(openArgs, "-na", "Google Chrome", "--args", "--user-data-dir="+userDataDir)
+			}
+			openArgs = append(openArgs, federationUrl)
+			err = exec.Command("open", openArgs...).Run()
 	default:
 		return fmt.Errorf("unsupported OS: %v", runtime.GOOS)
 	}
