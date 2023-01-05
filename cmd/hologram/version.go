@@ -9,7 +9,7 @@ import (
 func init() {
 	rootCmd.AddCommand(versionCmd)
 
-	rootCmd.PersistentFlags().BoolP("version", "v", false, "print the application version")
+	rootCmd.Flags().BoolP("version", "v", false, "print the application version")
 	rootCmd.PreRunE = func(cmd *cobra.Command, args []string) error {
 		version, err := cmd.Flags().GetBool("version")
 		if err != nil {
