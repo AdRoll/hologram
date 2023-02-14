@@ -150,6 +150,12 @@ func launchConsole(newSession bool, showUrl bool, noLaunch bool) error {
 		}
 		openArgs = append(openArgs, federationUrl)
 		err = exec.Command("open", openArgs...).Run()
+	case "linux":
+		if newSession {
+			fmt.Println("Warning: --new-session is not currently supported on Linux")
+		}
+		openArgs = append(openArgs, federationUrl)
+		err = exec.Command("xdg-open", openArgs...).Run()
 	default:
 		return fmt.Errorf("unsupported OS: %v", runtime.GOOS)
 	}
