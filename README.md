@@ -189,6 +189,24 @@ To configure the firewall, place `pf.hologram.conf` in `/etc/pf/`, and `hologram
 
 You also must ensure the log file, `/var/log/hologram.log` is writable by the user.
 
+## Export AWS credentials
+
+This may be necessary if using tools like `eksctl`.
+
+The following command will use `curl` to hit the local meta-data endpoint, parse the output using `jq`, echo `export` commands, and wrap it all in an eval.
+
+```bash
+eval `curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/hologram-access | jq -r '. | "export AWS_ACCESS_KEY_ID=\(.AccessKeyId)\nexport AWS_SECRET_ACCESS_KEY=\(.SecretAccessKey)\nexport AWS_SESSION_TOKEN=\(.Token)"'`
+```
+
+Sanity check
+
+```bash
+✗ env | grep ^AWS | cut -d'=' -f1
+AWS_ACCESS_KEY_ID
+AWS_SECRET_ACCESS_KEY
+AWS_SESSION_TOKEN
+```
 
 ## Deployment Suggestions
 At AdRoll we have Hologram deployed in a fault-tolerant setup, with the following:
