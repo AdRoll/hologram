@@ -1,6 +1,6 @@
 FROM golang:1.19.4
 
-# Switch to archive Debian
+# Switch to archive in sources.list for Debian 9
 RUN echo 'deb http://archive.debian.org/debian stretch main contrib non-free' >> /etc/apt/sources.list
 
 RUN apt-get update && apt-get install -y \
