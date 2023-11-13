@@ -9,4 +9,7 @@ artifacts/
 deploy/healthcheck
 .hologram-package-config
 .idea/
+agent/support/output.tar.gz
+cmd/hologram-agent/hologram-agent
+cmd/hologram/hologram
 .DS_Store
