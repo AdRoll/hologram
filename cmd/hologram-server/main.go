@@ -83,6 +83,7 @@ func main() {
 		debugMode        = flag.Bool("debug", false, "Enable debug mode.")
 		pubKeysAttr      = flag.String("pubkeysattr", "", "Name of the LDAP user attribute containing ssh public key data.")
 		roleTimeoutAttr  = flag.String("roletimeoutattr", "", "Name of the LDAP group attribute containing role timeout in seconds.")
+		noUpdateAttr     = flag.Bool("noUpdate", false, "Disable cache update on missed user.")
 		config           Config
 	)
 
@@ -175,6 +176,11 @@ func main() {
 		config.CacheTimeout = *cacheTimeout
 	}
 
+	if *noUpdateAttr != false {
+		config.LDAP.NoUpdateAttr = *noUpdateAttr
+
+	}
+
 	var stats g2s.Statter
 	var statsErr error
 
@@ -208,7 +214,7 @@ func main() {
 
 	ldapCache, err := server.NewLDAPUserCache(ldapServer, stats, config.LDAP.UserAttr, config.LDAP.BaseDN,
 		config.LDAP.EnableLDAPRoles, config.LDAP.RoleAttribute, config.AWS.DefaultRole, config.LDAP.DefaultRoleAttr,
-		config.LDAP.GroupClassAttr, config.LDAP.PubKeysAttr, config.LDAP.RoleTimeoutAttr)
+		config.LDAP.GroupClassAttr, config.LDAP.PubKeysAttr, config.LDAP.RoleTimeoutAttr, config.LDAP.NoUpdateAttr)
 	if err != nil {
 		log.Errorf("Top-level error in LDAPUserCache layer: %s", err.Error())
 		os.Exit(1)

@@ -147,7 +147,6 @@ func randomBytes(length int) []byte {
 	return buf
 }
 
-
 func TestLDAPUserCache(t *testing.T) {
 	Convey("Given an LDAP user cache connected to our server", t, func() {
 		// The SSH agent stuff was moved up here so that we can use it to
@@ -176,7 +175,7 @@ func TestLDAPUserCache(t *testing.T) {
 		s := &StubLDAPServer{
 			Keys: []string{keyValue, testPublicKey},
 		}
-		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "sshPublicKey", "")
+		lc, err := server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "sshPublicKey", "", false)
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
@@ -250,7 +249,7 @@ func TestLDAPUserCache(t *testing.T) {
 		s = &StubLDAPServer{
 			Keys: []string{testAuthorizedKey},
 		}
-		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "sshPublicKey", "")
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "sshPublicKey", "", false)
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
@@ -273,7 +272,7 @@ func TestLDAPUserCache(t *testing.T) {
 			Keys:      []string{nonAuthorizedKey},
 			OtherKeys: []string{testAuthorizedKey},
 		}
-		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "otherKeysAttribute", "")
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "", "", "", "groupOfNames", "otherKeysAttribute", "", false)
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
@@ -302,11 +301,11 @@ func TestLDAPUserCache(t *testing.T) {
 		s = &StubLDAPServer{
 			Keys: []string{keyValue, testPublicKey},
 		}
-		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "roleAttribute", "", "", "groupOfNames", "sshPublicKey", "timeoutAttribute")
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "roleAttribute", "", "", "groupOfNames", "sshPublicKey", "timeoutAttribute", false)
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
-		Convey ("If a role timeout attribute is set then it should be respected", func() {
+		Convey("If a role timeout attribute is set then it should be respected", func() {
 			Convey("Ensure LDAP user cache is updated with a non-default role timeout", func() {
 				groups := lc.Groups()
 				So(len(groups), ShouldEqual, 1)
@@ -323,11 +322,11 @@ func TestLDAPUserCache(t *testing.T) {
 			})
 		})
 
-		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "roleAttribute", "", "", "groupOfNames", "sshPublicKey", "")
+		lc, err = server.NewLDAPUserCache(s, g2s.Noop(), "cn", "dc=testdn,dc=com", false, "roleAttribute", "", "", "groupOfNames", "sshPublicKey", "", false)
 		So(err, ShouldBeNil)
 		So(lc, ShouldNotBeNil)
 
-		Convey ("If no role timeout attribute is set, the default should be used.", func() {
+		Convey("If no role timeout attribute is set, the default should be used.", func() {
 			groups := lc.Groups()
 			So(len(groups), ShouldEqual, 1)
 			So(len(groups["testdn_0"].ARNs), ShouldEqual, 1)

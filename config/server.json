@@ -12,7 +12,8 @@
     "defaultroleattr": "employeeType",
     "groupclassattr": "groupOfNames",
     "pubkeysattr": "sshPublicKey",
-    "roletimeoutattr": "timeoutAttribute"
+    "roletimeoutattr": "timeoutAttribute",
+    "noupdateattr": false
   },
   "aws": {
     "account":      "123456789010",

@@ -19,16 +19,17 @@ type LDAP struct {
 		DN       string `json:"dn"`
 		Password string `json:"password"`
 	} `json:"bind"`
-	UserAttr           string `json:"userattr"`
-	BaseDN             string `json:"basedn"`
-	Host               string `json:"host"`
-	InsecureLDAP       bool   `json:"insecureldap"`
-	EnableLDAPRoles    bool   `json:"enableldaproles"`
-	RoleAttribute      string `json:"roleattr"`
-	DefaultRoleAttr    string `json:"defaultroleattr"`
-	GroupClassAttr     string `json:"groupclassattr"`
-	PubKeysAttr        string `json:"pubkeysattr"`
-	RoleTimeoutAttr    string `json:"roletimeoutattr"`
+	UserAttr        string `json:"userattr"`
+	BaseDN          string `json:"basedn"`
+	Host            string `json:"host"`
+	InsecureLDAP    bool   `json:"insecureldap"`
+	EnableLDAPRoles bool   `json:"enableldaproles"`
+	RoleAttribute   string `json:"roleattr"`
+	DefaultRoleAttr string `json:"defaultroleattr"`
+	GroupClassAttr  string `json:"groupclassattr"`
+	PubKeysAttr     string `json:"pubkeysattr"`
+	RoleTimeoutAttr string `json:"roletimeoutattr"`
+	NoUpdateAttr    bool   `json:"noupdateattr"`
 }
 
 type Config struct {

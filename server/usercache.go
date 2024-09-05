@@ -17,8 +17,8 @@ package server
 import (
 	"encoding/base64"
 	"fmt"
-	"time"
 	"strconv"
+	"time"
 
 	"github.com/AdRoll/hologram/log"
 	"github.com/nmcclain/ldap"
@@ -77,6 +77,7 @@ type ldapUserCache struct {
 	groupClassAttr  string
 	pubKeysAttr     string
 	roleTimeoutAttr string
+	noUpdate        bool
 }
 
 /*
@@ -212,7 +213,6 @@ func (luc *ldapUserCache) _verify(username string, challenge []byte, sshSig *ssh
 }
 
 /*
-
  */
 func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig *ssh.Signature) (
 	*User, error) {
@@ -224,16 +224,19 @@ func (luc *ldapUserCache) Authenticate(username string, challenge []byte, sshSig
 		luc.stats.Counter(1.0, "ldapCacheMiss", 1)
 
 		// We should update LDAP cache again to retry keys.
-		luc.Update()
+		if !(luc.noUpdate) {
+			luc.Update()
+		}
+		// Retry verification.
 		return luc._verify(username, challenge, sshSig)
 	}
 	return retUser, nil
 }
 
 /*
-	NewLDAPUserCache returns a properly-configured LDAP cache.
+NewLDAPUserCache returns a properly-configured LDAP cache.
 */
-func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string, groupClassAttr string, pubKeysAttr string, roleTimeoutAttr string) (*ldapUserCache, error) {
+func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr string, baseDN string, enableLDAPRoles bool, roleAttribute string, defaultRole string, defaultRoleAttr string, groupClassAttr string, pubKeysAttr string, roleTimeoutAttr string, noUpdate bool) (*ldapUserCache, error) {
 	retCache := &ldapUserCache{
 		users:           map[string]*User{},
 		groups:          map[string]*Group{},
@@ -248,6 +251,7 @@ func NewLDAPUserCache(server LDAPImplementation, stats g2s.Statter, userAttr str
 		groupClassAttr:  groupClassAttr,
 		pubKeysAttr:     pubKeysAttr,
 		roleTimeoutAttr: roleTimeoutAttr,
+		noUpdate:        noUpdate,
 	}
 
 	updateError := retCache.Update()
