@@ -66,10 +66,10 @@ func launchConsole(newSession bool, showUrl bool, noLaunch bool) error {
 
 	// Get the profile name from the metadata service
 	response, err := http.Get(profileUrl)
-	defer response.Body.Close()
 	if err != nil {
 		return err
 	}
+	defer response.Body.Close()
 	profileBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
@@ -79,10 +79,10 @@ func launchConsole(newSession bool, showUrl bool, noLaunch bool) error {
 	// Get the credentials from the metadata service
 	metadataUrl := fmt.Sprintf("%v%v", profileUrl, profile)
 	response, err = http.Get(metadataUrl)
-	defer response.Body.Close()
 	if err != nil {
 		return err
 	}
+	defer response.Body.Close()
 	if response.StatusCode != 200 {
 		return fmt.Errorf("error getting credentials. Try running 'hologram me'")
 	}
@@ -105,10 +105,10 @@ func launchConsole(newSession bool, showUrl bool, noLaunch bool) error {
 	awsCredsJson, err := json.Marshal(awsCreds)
 	signinTokenUrl := fmt.Sprintf("%v?Action=getSigninToken&SessionDuration=43200&Session=%v", federationUrlBase, url.QueryEscape(string(awsCredsJson)))
 	response, err = http.Get(signinTokenUrl)
-	defer response.Body.Close()
 	if err != nil {
 		return err
 	}
+	defer response.Body.Close()
 	signinToken_bytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err
