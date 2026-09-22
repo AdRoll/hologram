@@ -1,41 +1,47 @@
-FROM golang:1.19.4
+FROM golang:1.27.1
 
-# Switch to archive in sources.list for Debian 9
-RUN echo 'deb http://archive.debian.org/debian stretch main contrib non-free' >> /etc/apt/sources.list
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    cpio \
+    file \
+    g++ \
+    gcc \
+    git \
+    jq \
+    libssl-dev \
+    libxml2-dev \
+    llvm-19 \
+    make \
+    rpm \
+    rsyslog \
+    ruby \
+    ruby-dev \
+    xar \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get update && apt-get install -y \
-                                cpio \
-                                file \
-                                gcc \
-                                g++ \
-                                libssl1.0-dev \
-                                libxml2-dev \
-                                make \
-                                rpm \
-                                rsyslog \
-                                ruby \
-                                zlib1g-dev \
-                                ruby-dev \
-                                jq
-
-RUN gem install fpm
-
-RUN cd /tmp && wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz && tar -zxvf protobuf-2.6.1.tar.gz > /dev/null && cd protobuf-2.6.1 && ./configure --prefix=/usr > /dev/null && make > /dev/null && make install > /dev/null && rm -rf /tmp/protobuf-2.6.1 protobuf-2.6.1.tar.gz
-
-# Avoid using ssh to get the repos
-#RUN git config --global url."https://github.com/".insteadOf "git@github.com:"
+RUN gem install --no-document fpm
 
 WORKDIR /tmp
-# Get dependencies for building hologram
-RUN go install github.com/jteeuwen/go-bindata/...
-RUN git clone https://github.com/pote/gpm.git && cd gpm && ./configure && make install && rm -rf /tmp/gpm
-RUN wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/xar/xar-1.5.2.tar.gz && tar xf xar-1.5.2.tar.gz && cd xar-1.5.2 && ./configure && make && make install && rm -rf /tmp/xar-1.5.2
-RUN git clone https://github.com/hogliux/bomutils.git > /dev/null && cd bomutils && make > /dev/null && make install  > /dev/null && rm -rf /tmp/bomutils
+# mkbom, for the payload manifest in the macOS flat package.
+RUN git clone --depth 1 https://github.com/hogliux/bomutils.git > /dev/null \
+    && make -C bomutils install > /dev/null \
+    && rm -rf /tmp/bomutils
 
-ENV HOLOGRAM_DIR /go/src/github.com/AdRoll/hologram
-ENV BUILD_SCRIPTS ${HOLOGRAM_DIR}/buildscripts
-ENV PATH ${BUILD_SCRIPTS}:$PATH
-ENV BIN_DIR /go/bin
+# llvm-lipo combines the darwin amd64 and arm64 builds into a single universal
+# binary; Apple's lipo is macOS-only, so this keeps the whole build in the
+# container. Debian only ships the tool under its LLVM version, so alias it and
+# keep the version pinned to the package name above.
+RUN ln -s "$(ls /usr/bin/llvm-lipo-* | head -1)" /usr/local/bin/llvm-lipo
+
+ENV HOLOGRAM_DIR=/go/src/github.com/AdRoll/hologram
+ENV BUILD_SCRIPTS=${HOLOGRAM_DIR}/buildscripts
+ENV PATH=${BUILD_SCRIPTS}:$PATH
+ENV BIN_DIR=/go/bin
+
+# The repo is bind-mounted at runtime and owned by the host user, which git
+# refuses to touch by default.
+RUN git config --global --add safe.directory ${HOLOGRAM_DIR}
+
 COPY . /go/src/github.com/AdRoll/hologram
 WORKDIR /go/src/github.com/AdRoll/hologram
 

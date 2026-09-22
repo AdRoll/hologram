@@ -40,7 +40,7 @@ func (d *dummyCredentialsSource) GetCredentials() (*sts.Credentials, error) {
 }
 
 func request(port int, path string) []byte {
-	url := fmt.Sprintf("http://localhost:%v%v", port, path)
+	url := fmt.Sprintf("http://127.0.0.1:%v%v", port, path)
 	response, err := http.Get(url)
 	So(err, ShouldBeNil)
 	So(response.StatusCode, ShouldEqual, 200)
@@ -52,7 +52,7 @@ func request(port int, path string) []byte {
 func TestMetadataService(t *testing.T) {
 	Convey("Given a test server", t, func() {
 		testListener, err := net.ListenTCP("tcp", &net.TCPAddr{
-			IP:   net.ParseIP("0.0.0.0"),
+			IP:   net.ParseIP("127.0.0.1"),
 			Port: 0,
 		})
 
@@ -121,7 +121,7 @@ func TestMetadataService(t *testing.T) {
 		Convey("It should return a 500 error if there are no credentials", func() {
 			dummyCreds.creds = nil
 			dummyCreds.err = errors.New("testing")
-			url := fmt.Sprintf("http://localhost:%v/latest/meta-data/iam/security-credentials/hologram-access", service.Port())
+			url := fmt.Sprintf("http://127.0.0.1:%v/latest/meta-data/iam/security-credentials/hologram-access", service.Port())
 			response, err := http.Get(url)
 			So(err, ShouldBeNil)
 			So(response.StatusCode, ShouldEqual, 500)
@@ -130,7 +130,7 @@ func TestMetadataService(t *testing.T) {
 		Convey("It should return a 401 if the request host is external", func() {
 			// Craft a request and set the Host to something external
 			client := &http.Client{}
-			url := fmt.Sprintf("http://localhost:%v/latest/meta-data/iam/security-credentials/hologram-access", service.Port())
+			url := fmt.Sprintf("http://127.0.0.1:%v/latest/meta-data/iam/security-credentials/hologram-access", service.Port())
 			req, _ := http.NewRequest("GET", url, nil)
 			req.Host = "attacker.com"
 			res, err := client.Do(req)

@@ -1,3 +1,5 @@
 Dockerfile
 .godeps
 .git
+bin
+artifacts
