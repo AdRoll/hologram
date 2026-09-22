@@ -16,7 +16,7 @@ mkdir -p /hologram-build/darwin/root/Library/LaunchAgents
 mkdir -p /hologram-build/darwin/scripts
 mkdir -p /hologram-build/darwin/flat/base.pkg/
 
-install -m 0755 ${BIN_DIR}/darwin_amd64/hologram{-agent,,-authorize,-boot} /hologram-build/darwin/root/usr/local/bin/
+install -m 0755 ${BIN_DIR}/darwin_universal/hologram{-agent,,-authorize,-boot} /hologram-build/darwin/root/usr/local/bin/
 install -m 0644 ${HOLOGRAM_DIR}/config/agent.json /hologram-build/darwin/root/etc/hologram/agent.json
 install -m 0644 ${HOLOGRAM_DIR}/agent/support/darwin/com.adroll.hologram{-ip,}.plist /hologram-build/darwin/root/Library/LaunchDaemons/
 install -m 0644 ${HOLOGRAM_DIR}/agent/support/darwin/com.adroll.hologram-me.plist /hologram-build/darwin/root/Library/LaunchAgents/
@@ -54,5 +54,5 @@ PKG_LOCATION="artifacts/Hologram-${GIT_TAG}.pkg"
 ( cd /hologram-build/darwin/root && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > /hologram-build/darwin/flat/base.pkg/Payload
 ( cd /hologram-build/darwin/scripts && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > /hologram-build/darwin/flat/base.pkg/Scripts
 mkbom -u 0 -g 80 /hologram-build/darwin/root /hologram-build/darwin/flat/base.pkg/Bom || exit ${ERROSXPKG}
-( cd /hologram-build/darwin/flat/base.pkg && /usr/local/bin/xar --compression none -cf "${HOLOGRAM_DIR}/${PKG_LOCATION}" * ) || exit ${ERROSXPKG}
+( cd /hologram-build/darwin/flat/base.pkg && xar --compression none -cf "${HOLOGRAM_DIR}/${PKG_LOCATION}" * ) || exit ${ERROSXPKG}
 echo "osx package has been built: ${PKG_LOCATION}"
