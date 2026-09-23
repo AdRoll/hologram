@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/aws/aws-sdk-go v1.44.160
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
-	github.com/go-ini/ini v1.67.0 // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/gopherjs/gopherjs v0.0.0-20220104163920-15ed2e8cf2bd // indirect
 	github.com/howeyc/gopass v0.0.0-20210920133722-c8aef6fb66ef
@@ -19,16 +18,15 @@ require (
 	golang.org/x/sys v0.3.0 // indirect
 )
 
+require github.com/spf13/cobra v1.6.1
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d // indirect
-	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
 	golang.org/x/term v0.3.0 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
